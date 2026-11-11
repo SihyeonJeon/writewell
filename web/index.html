@@ -40,7 +40,9 @@ body.noside #side{margin-left:-264px}
 .col{max-width:740px;margin:0 auto}
 .msg{display:flex;gap:12px;margin:0 0 22px}
 .msg.me{justify-content:flex-end}
-.me .text{background:var(--me);padding:9px 15px;border-radius:20px;max-width:78%;white-space:pre-wrap;word-break:break-word}
+.mewrap{max-width:78%;display:flex;flex-direction:column;align-items:flex-end}
+.me .text{background:var(--me);padding:9px 15px;border-radius:20px;white-space:pre-wrap;word-break:break-word}
+.gloss{font-size:14.5px;color:var(--faint);margin-top:4px;font-style:italic;line-height:1.4}
 .av{width:30px;height:30px;border-radius:9px;background:var(--btn);color:var(--btn-ink);display:grid;place-items:center;font-size:13.5px;font-weight:700;flex:none;margin-top:1px}
 .body{min-width:0;flex:1}
 .ai .text{white-space:pre-wrap;word-break:break-word;padding-top:2px}
@@ -119,6 +121,13 @@ u{text-decoration:underline wavy var(--accent);text-underline-offset:5px;text-de
 .wait i{width:7px;height:7px;border-radius:50%;background:var(--faint);animation:b 1s infinite}
 .wait i:nth-child(2){animation-delay:.15s}.wait i:nth-child(3){animation-delay:.3s}
 @keyframes b{0%,60%,100%{opacity:.25}30%{opacity:1}}
+#cap{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);max-width:min(1180px,86vw);background:rgba(12,14,18,.86);color:#fff;font-size:25px;line-height:1.45;padding:10px 22px;border-radius:12px;text-align:center;z-index:20;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif}
+#tells{position:fixed;inset:0;background:var(--bg);z-index:15;display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif}
+#tells table{border-collapse:collapse;font-size:30px}
+#tells th{font-size:17px;font-weight:500;color:var(--mute);padding:0 28px 14px;text-align:right}
+#tells td{padding:12px 28px;border-top:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+#tells td:first-child{text-align:left;font-weight:600}
+#tells td:nth-child(2){color:var(--accent)}
 @media (max-width:900px){#side{position:absolute;z-index:5;box-shadow:var(--shadow)}#art.open{position:absolute;inset:0;z-index:6;flex-basis:auto;width:100%}#art>*{min-width:0}#doc{padding:22px 20px 60px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -203,7 +212,9 @@ function renderMsgs(){
   c.msgs.forEach((m, i) => msgsEl.appendChild(m.role === 'user' ? userNode(m) : aiNode(m, i === c.msgs.length - 1)));
   toBottom(true);
 }
-function userNode(m){ const d = document.createElement('div'); d.className = 'msg me'; d.innerHTML = `<div class="text">${esc(m.text)}</div>`; return d }
+let GLOSS = null;
+const gl = k => GLOSS && GLOSS[k] ? `<div class="gloss">${esc(GLOSS[k])}</div>` : '';
+function userNode(m){ const d = document.createElement('div'); d.className = 'msg me'; d.innerHTML = `<div class="mewrap"><div class="text">${esc(m.text)}</div>${gl(m.text)}</div>`; return d }
 function aiNode(m, last){
   const d = document.createElement('div'); d.className = 'msg ai';
   d.innerHTML = `<div class="av">寫</div><div class="body"><div class="think" hidden></div><div class="text"></div><div class="steps"></div><div class="extra"></div><div class="meta"></div></div>`;
@@ -215,6 +226,8 @@ function paintSteps(d, m){ d.querySelector('.steps').innerHTML = (m.steps || [])
 function paintExtra(d, m){
   const x = d.querySelector('.extra'); x.innerHTML = '';
   if (m.meme?.url) { const im = new Image(); im.className = 'meme'; im.src = m.meme.url; im.alt = m.meme.alt || ''; im.onload = () => toBottom(); x.appendChild(im) }
+  if (GLOSS && m.text && GLOSS[m.text]) { const g = document.createElement('div'); g.className = 'gloss'; g.textContent = GLOSS[m.text]; x.appendChild(g) }
+  if (GLOSS && m.meme && GLOSS['meme:' + m.meme.id]) { const g = document.createElement('div'); g.className = 'gloss'; g.textContent = GLOSS['meme:' + m.meme.id]; x.appendChild(g) }
   if (m.meme?.caption) { const p = document.createElement('div'); p.className = 'text'; p.style.marginTop = '6px'; p.textContent = m.meme.caption; x.appendChild(p) }
   const a = m.art && conv()?.arts?.[m.art];
   if (a && a.final) {
@@ -324,23 +337,51 @@ input.addEventListener('input', grow);
 input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); $('#f').requestSubmit() } });
 $('#f').onsubmit = e => { e.preventDefault(); if (busy) return busy.abort(); const v = input.value.trim(); if (!v) return; input.value = ''; grow(); send(v) };
 renderSide(); renderMsgs(); setBusy(null); input.focus();
+const TELLS = [['genuinely', '26.8%', '0.7%'], ['which is why', '21.6%', '3.4%'], ['non-negotiable', '12.4%', '0.7%'], ['? Yes. / ? No.', '25.5%', '2.4%']];
 if (new URLSearchParams(location.search).has('play')) (async () => {
-  const lines = await (await fetch('/api/script')).json(), nap = ms => new Promise(r => setTimeout(r, ms));
-  cur = null; renderSide(); renderMsgs(); await nap(1200);
-  for (const line of lines) {
-    for (const ch of line) { input.value += ch; grow(); await nap(55) }
-    await nap(350); input.value = ''; grow(); await send(line); await nap(1500);
+  // Autoplay for recording. With &captions the narration text rides along and each scene waits for its narration.
+  const Q = new URLSearchParams(location.search), nap = ms => new Promise(r => setTimeout(r, ms));
+  const lines = await (await fetch('/api/script')).json();
+  const segs = Q.has('captions') ? await (await fetch('/api/narration')).json() : [];
+  if (Q.has('captions')) GLOSS = await (await fetch('/api/gloss')).json();
+  const cap = document.createElement('div'); cap.id = 'cap'; cap.hidden = true; document.body.appendChild(cap);
+  window.__cues = []; let narrEnd = 0;
+  async function cue(id){
+    const s = segs.find(x => x.id === id); if (!s) return;
+    if (narrEnd > performance.now()) await nap(narrEnd - performance.now() + 300);
+    window.__cues.push({id, epoch: Date.now() / 1000}); narrEnd = performance.now() + s.seconds * 1000;
+    const parts = s.text.match(/[^.:!?]+[.:!?]+/g) || [s.text]; let acc = 0;
+    for (const p of parts) { setTimeout(() => { cap.textContent = p.trim(); cap.hidden = false }, acc / s.text.length * s.seconds * 1000); acc += p.length }
+    const end = narrEnd; setTimeout(() => { if (narrEnd === end) cap.hidden = true }, s.seconds * 1000 + 250);
   }
-  // read-through for the recording: the finished piece top to bottom, then the uncontrolled version with its marks
   const glide = (el, ms) => new Promise(done => { const from = el.scrollTop, to = el.scrollHeight - el.clientHeight, t0 = performance.now();
     const step = t => { const k = Math.min((t - t0) / ms, 1); el.scrollTop = from + (to - from) * k; k < 1 ? requestAnimationFrame(step) : done() }; requestAnimationFrame(step) });
+  const type = async line => { for (const ch of line) { input.value += ch; grow(); await nap(55) } await nap(350); input.value = ''; grow() };
   const doc = $('#doc'), tab = v => document.querySelector(`.seg button[data-v=${v}]`).click();
-  if ($('#art').classList.contains('open')) {
-    await nap(800); await glide(doc, 7000); await nap(600);
-    tab('base'); await nap(900); await glide(doc, 5000); await nap(600);
-    tab('ours'); await nap(400);
-    const vs = document.querySelectorAll('.ver'); if (vs.length) { vs[0].click(); await nap(1800); vs[vs.length - 1].click() }
+
+  cur = null; renderSide(); renderMsgs(); await nap(800);
+  if (segs.length) {
+    const ov = document.createElement('div'); ov.id = 'tells';
+    ov.innerHTML = '<table><tr><th></th><th>AI articles</th><th>people, before LLMs</th></tr>' + TELLS.map(t => `<tr><td>${t[0]}</td><td>${t[1]}</td><td>${t[2]}</td></tr>`).join('') + '</table>';
+    document.body.appendChild(ov); await cue('intro');
+    const s0 = segs.find(x => x.id === 'intro'); await nap(s0.seconds * 1000 - 5200); ov.remove();
   }
+  for (const [i, line] of lines.entries()) {
+    const writing = i === lines.length - 1;
+    await type(line);
+    await cue(i === 0 ? 'chat' : writing ? 'route' : '');
+    await send(line); await nap(writing ? 600 : 1300);
+  }
+  if ($('#art').classList.contains('open')) {
+    await cue('gate');
+    const vs = () => document.querySelectorAll('.ver');
+    if (vs().length) { vs()[0].click(); await nap(4200); vs()[vs().length - 1].click(); await nap(900) }
+    await glide(doc, segs.length ? 11500 : 7000); await nap(500);
+    await cue('compare'); tab('base'); await nap(700); await glide(doc, 4200); await nap(300);
+    await cue('outro'); tab('ours'); await nap(segs.length ? 3300 : 800);
+  }
+  if (narrEnd > performance.now()) await nap(narrEnd - performance.now());
+  await nap(800); window.__done = true;
 })();
 </script>
 </body>

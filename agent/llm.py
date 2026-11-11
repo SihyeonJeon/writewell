@@ -51,7 +51,7 @@ _LEAD = re.compile(r"^[^\w#*「《（\u4e00-\u9fff]+")      # stray leading symb
 
 
 # The CLI occasionally returns internal scaffolding (tags, rulers, notes to self) in place of the answer.
-_JUNK = re.compile(r"<\/?(thinking|reasoning)[\w_]*>|═{5,}|\ufffd|^\s*(The user|User wa)", re.M)
+_JUNK = re.compile(r"<\/?(thinking|reasoning)[\w_]*>|═{5,}|\ufffd|^\s*(The user|User wa)|Claude|Anthropic", re.M)
 
 
 def chat(system, messages: list[dict]) -> tuple[str, str]:

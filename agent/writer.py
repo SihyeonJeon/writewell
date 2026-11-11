@@ -74,7 +74,10 @@ def _repair_sentences(text, result):
     out = llm.write(SYSTEM, [{"role": "user", "content": LINES.format(text=text, lines=lines)}])
     for m in re.finditer(r"(?m)^\s*(\d+)[.、．)]\s*(.+)$", out):
         n, new = int(m.group(1)), m.group(2).strip().replace("【", "").replace("】", "").replace("〔整句〕", "")
-        if 1 <= n <= len(idx) and not any(h["kind"] == "ban" for h in check(new)["hits"]):
+        if not 1 <= n <= len(idx):
+            continue
+        still = any(sp in new for sp in spans.get(idx[n - 1], ()))          # the flagged wording must be gone
+        if not still and not any(h["kind"] == "ban" for h in check(new)["hits"]):
             old = sents[idx[n - 1]]
             lead = old[:len(old) - len(old.lstrip())]
             text = text.replace(old, lead + new, 1)
@@ -98,6 +101,7 @@ def run(request: str):
         result = check(text)
         if _cost(result) <= best_n:
             best, best_n = (text, result), _cost(result)
+        stalled = _cost(result) >= _cost(best[1]) and (text, result) != best
         text, result = best                      # never continue from a worse version
         yield {"type": "repair", "round": rnd, "text": text, "marked": mark(text, result["hits"], result["flow"]), "check": _public(result)}
     text, result = best

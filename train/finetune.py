@@ -60,7 +60,7 @@ def main():
                                            load_in_4bit=True, full_finetuning=False)
     tok = get_chat_template(tok, chat_template="gemma-4")
     base_file = RUN / "samples_base.json"
-    if not base_file.exists():
+    if not base_file.exists() and not INIT:      # second stage: the base samples already exist
         base_file.write_text(json.dumps(generate(model, tok, PROBES), ensure_ascii=False, indent=1))
 
     r = int(E("RANK", "16"))
@@ -76,7 +76,7 @@ def main():
         return {"text": texts}
 
     keep = lambda rs: Dataset.from_list([{"messages": x["messages"]} for x in rs]).map(fmt, batched=True)  # noqa: E731
-    train, evals = keep(rows(DATA, int(E("MAX_ROWS", "0")))), keep(rows("eval"))
+    train, evals = keep(rows(DATA, int(E("MAX_ROWS", "0")))), keep(rows(E("EVAL", "eval")))
     print("train rows", len(train), "eval rows", len(evals), "\n", train[0]["text"][:400])
 
     trainer = SFTTrainer(
@@ -87,7 +87,7 @@ def main():
             per_device_eval_batch_size=8, num_train_epochs=float(E("EPOCHS", "1")),
             learning_rate=float(E("LR", "2e-4")), warmup_ratio=0.03, lr_scheduler_type="cosine",
             optim="adamw_8bit", weight_decay=0.001, seed=3407, report_to="none",
-            logging_steps=20, eval_strategy="steps", eval_steps=300, save_steps=300, save_total_limit=2,
+            logging_steps=20, eval_strategy="steps", eval_steps=int(E("EVAL_STEPS", "300")), save_steps=int(E("EVAL_STEPS", "300")), save_total_limit=2,
         ),
     )
     trainer = train_on_responses_only(trainer, instruction_part="<|turn>user\n", response_part="<|turn>model\n")

@@ -40,6 +40,17 @@ Copy `.env.example` to `.env` and fill in what you have:
 - `OPENROUTER_API_KEY`: turns on the Jev decision model for routing (`route/jev.py`); without it a rule routes.
 - `WW_REPLAY=demo/recording.json`: plays back a recording of real outputs at a watchable pace (`tools/record_demo.py` makes one).
 
+## What is real in the demo
+
+- **Chat replies** are outputs of our fine-tuned Gemma (gemma-4-12B, QLoRA, checkpoint 2100, eval loss 3.22), drawn with
+  `train/infer_demo.py`: 18 samples per turn, each checked by the gate. `demo/chat_candidates.json` holds every sample and
+  the one used. Point `CHAT_BASE_URL` at a server hosting the model and the same turns run live.
+- **The article** is written by a frontier model and passed through the gate; flagged sentences go back to the model for
+  another turn. `demo/recording.json` holds the draft, each rewrite and the final text with their gate results.
+- **Routing** in the demo is a rule. `route/jev.py` implements the decision-model version and switches on with its key.
+- The fine-tuned model was trained on single exchanges, so it answers the current message alone (`agent/context.py`);
+  conversation memory is kept by the agent and handed to the writer.
+
 ## Reaction memes
 
 `agent/skills/memes.py` answers with a meme when one fits and with none when nothing does. The library

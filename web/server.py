@@ -68,6 +68,10 @@ class Handler(BaseHTTPRequestHandler):
         self.path = self.path.split("?")[0]
         if self.path in ("/", "/index.html"):
             return self._send((HERE / "index.html").read_bytes(), "text/html; charset=utf-8")
+        if self.path == "/api/gloss":
+            return self._send((ROOT / "demo" / "gloss.json").read_bytes(), "application/json")
+        if self.path == "/api/narration":
+            return self._send((ROOT / "demo" / "narration.json").read_bytes(), "application/json")
         if self.path == "/api/script":
             return self._send((ROOT / "demo" / "script.json").read_bytes(), "application/json")
         if self.path.startswith("/memes/"):

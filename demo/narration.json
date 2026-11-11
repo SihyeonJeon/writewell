@@ -1,0 +1,38 @@
+[
+ {
+  "id": "intro",
+  "text": "You can tell when AI wrote something. In English it's words like genuinely and non-negotiable. We measured it: genuinely is in twenty-seven percent of AI articles, and under one percent of what people wrote before language models. Every language has its own tells. writewell is a chat agent that takes them out, starting with Taiwanese Mandarin.",
+  "audio": "out/audio/intro-e686dc7921.mp3",
+  "seconds": 15.88
+ },
+ {
+  "id": "chat",
+  "text": "Everyday talk goes to a Gemma model we fine-tuned on real exchanges from Taiwanese community threads, so replies read like a local typing. A reaction skill scores each message against an index of trending memes, and sends one only when the match is strong.",
+  "audio": "out/audio/chat-1139e496f3.mp3",
+  "seconds": 12.45
+ },
+ {
+  "id": "route",
+  "text": "Ask for writing, and the turn is routed to a frontier model. The router is designed for Jev, a decision model that reads intent.",
+  "audio": "out/audio/route-173679883e.mp3",
+  "seconds": 5.48
+ },
+ {
+  "id": "gate",
+  "text": "Frontier models write well, and sound like AI. So we collected six thousand six hundred texts Taiwanese people wrote before language models, across ten genres, and compared them with a thousand AI-written articles. Phrases that machines use far more than people, in every genre, go on a ban list. A second model scores word sequences, and flags sentences built the way machines build them. The agent's gate sends only the flagged sentences back to the model for another turn, and the banned phrases never appear in the prompt.",
+  "seconds": 24.89,
+  "audio": "out/audio/gate-f40028c566.mp3"
+ },
+ {
+  "id": "compare",
+  "text": "Here is the same request with no control. The marks are what the gate catches.",
+  "audio": "out/audio/compare-1a21df6b49.mp3",
+  "seconds": 3.48
+ },
+ {
+  "id": "outro",
+  "text": "Data pipeline, gate, and agent are all on GitHub.",
+  "audio": "out/audio/outro-19fd81ee5b.mp3",
+  "seconds": 2.65
+ }
+]
