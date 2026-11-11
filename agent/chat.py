@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 
 from . import llm
+from .skills import memes
 
 ROOT = Path(__file__).resolve().parent.parent
 MEMES = ROOT / "memes"
@@ -22,30 +23,35 @@ PERSONA = """你叫小寫，是住在台北的朋友，跟對方用 LINE 聊天�
 對方要你寫文章、貼文、信之類的東西時，只回一句話說你去寫了，文章會出現在旁邊的面板。"""
 
 
-def route(message: str) -> str:
-    return "write" if WRITE_RE.search(message) else "chat"
+def route(history: list[dict]) -> tuple[str, str]:
+    """-> ("write" | "chat", who decided). The decision model runs when its key is set; the rule is the fallback."""
+    import os
+    message = history[-1]["content"]
+    if os.environ.get("OPENROUTER_API_KEY"):
+        from route import jev
+        r = jev.route(history)
+        if r.reason != "fallback":
+            to = "chat" if r.model == "gemma" else "write" if r.form == "longform" or WRITE_RE.search(message) else "chat"
+            return to, "jev: " + r.reason
+    return ("write" if WRITE_RE.search(message) else "chat"), "rule"
 
 
-def memes():
-    f = MEMES / "manifest.json"
-    return json.loads(f.read_text()) if f.exists() else []
+def reply(history: list[dict]):
+    """-> (text, model label, meme or None). The reaction skill may hand the model a line and an image."""
+    card = memes.pick(history[-1]["content"])
+    system = PERSONA + ("\n\n" + memes.hint(card) if card else "")
+    text, model = llm.chat(system, history[-12:])
+    if card and card["say"] and card["say"][:6] not in text:
+        text = card["say"]                    # the skill's line wins when the model wandered off it
+    meme = {"url": card["image"], "alt": card["alt"], "id": card["id"]} if card and card["image"] else None
+    return text.strip(), model, meme
 
 
-def pick_meme(user: str, reply: str, last_had_meme: bool):
-    """At most one image, never twice in a row. A meme entry lists the situations (regex) it fits."""
-    if last_had_meme:
-        return None
-    for m in memes():
-        if any(re.search(p, user) or re.search(p, reply) for p in m.get("when", [])):
-            return {"url": "/memes/" + m["file"], "alt": m.get("alt", ""), "id": m["id"]}
-    return None
-
-
-def reply(history: list[dict]) -> tuple[str, str]:
-    return llm.chat(PERSONA, history[-12:])
+ACK = "好，我去寫，等等開在右邊。"
 
 
 def ack(history: list[dict]) -> tuple[str, str]:
-    """One line saying the piece is on its way. Anything past the first line is dropped."""
-    text, model = llm.chat(PERSONA, history[-6:])
-    return text.strip().split("\n")[0][:80], model
+    """One line saying the piece is on its way; the model is handed the line, and the line wins if it wanders."""
+    text, model = llm.chat(PERSONA + "\n\n對方要你寫東西。照樣回這一句，別多加：「" + ACK + "」", history[-4:])
+    text = text.strip().split("\n")[0]
+    return (text if ACK[:5] in text and len(text) < 40 else ACK), model

@@ -35,7 +35,15 @@ python -m venv .venv && .venv/bin/pip install jieba opencc-python-reimplemented 
 
 - `CHAT_BASE_URL`, `CHAT_MODEL`: any OpenAI-compatible endpoint for the chat model (e.g. Ollama at `http://localhost:11434/v1`).
 - `ANTHROPIC_API_KEY`: used for writing; without it the local `claude` CLI is used.
-- Memes: copy `memes/manifest.example.json` to `memes/manifest.json` and put the image files next to it. Images are not in the repo.
+- `OPENROUTER_API_KEY`: turns on the Jev decision model for routing (`route/jev.py`); without it a rule routes.
+- `WW_REPLAY=demo/recording.json`: plays back a recording of real outputs at a watchable pace (`tools/record_demo.py` makes one).
+
+## Reaction memes
+
+`agent/skills/memes.py` answers with a meme when the moment fits. The library (`memes/library/taiwan-v1/catalog.json`)
+comes from the social-monitoring collector (`collect/ig_trends.py`), which watches public accounts on a schedule and
+records, per meme, the phrase, when it fits and when it does not. `memes/pins.json` lists situations where a
+specific card must come out. Image files are not in the repo.
 
 ## Layout
 
@@ -43,7 +51,7 @@ python -m venv .venv && .venv/bin/pip install jieba opencc-python-reimplemented 
 collect/   Common Crawl collectors for the human corpus
 calc/      n-gram distributions, two-model likelihood ratio, corpus comparison
 gate/      lexicon builder, lexicon, checker
-agent/     model access, controlled writer, chat persona and routing
+agent/     model access, controlled writer, chat persona, routing, reaction skill
 route/     decision-model routing policy (not wired into the demo yet)
 train/     chat-model fine-tuning
 web/       demo server and page

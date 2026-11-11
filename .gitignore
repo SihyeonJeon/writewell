@@ -6,4 +6,8 @@ __pycache__/
 .env
 logs/
 memes/*
-!memes/manifest.example.json
+!memes/pins.json
+!memes/library/
+memes/library/*/images/
+memes/library/*/evidence/
+memes/library/*/index.html

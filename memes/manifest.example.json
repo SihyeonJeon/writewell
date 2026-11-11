@@ -1,4 +1,0 @@
-[
-  {"id": "tired", "file": "tired.jpg", "alt": "累到靈魂出竅", "when": ["好累", "加班", "不想上班"]},
-  {"id": "money", "file": "money.jpg", "alt": "錢包在哭", "when": ["沒錢", "好貴", "月底"]}
-]

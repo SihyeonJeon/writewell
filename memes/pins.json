@@ -1,0 +1,7 @@
+[
+  {"when": "加班|好累|累死", "card": "tired-to-hyped", "say": "你那不是累，是嗨到快往生吧。", "send_image": false},
+  {"when": "不想去|不想上班|要上班", "card": "thanks-boss", "say": "這樣我休兩天耶，謝謝老闆。"},
+  {"when": "開了.*會|說好的輕鬆", "card": "holding-on-pirate", "say": "抓緊啦，撐到下班就是你的。", "image": "images/pirate-remix.jpg"},
+  {"when": "龍頭股|台積電|股票", "card": "peacefully-sleepless", "say": "對啊，安心的睡不著覺。"},
+  {"when": "說要去|沒人訂|還去不去", "card": "ven-again", "say": "我再 ven 一次，今年說好的旅行還去不去？"}
+]

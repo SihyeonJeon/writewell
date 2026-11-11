@@ -3,10 +3,12 @@
 The instructions below never name a gated word (tests/test_prompts.py enforces it). They describe form:
 what human text measurably does that machine text does not.
 """
-from gate.check import check, mark
+import re
+
+from gate.check import check, mark, surface
 from . import llm
 
-MAX_ROUNDS = 3
+MAX_ROUNDS = 4
 
 SYSTEM = """你在台灣寫了很多年的專欄跟部落格，讀者是台灣人。照台灣人平常會讀到的文章口吻來寫。
 
@@ -39,6 +41,46 @@ def _shape_note(sh):
     return (SHAPE_FLAT if sh.get("flat") else "") + (SHAPE_Q if sh.get("too_many_questions") else "")
 
 
+LINES = """這篇文章裡有幾句讀起來像機器寫的。我把那幾句列在最下面，像機器的字詞用【】框起來；前面標〔整句〕的，是整句的搭法像機器。
+
+每一句都整句重寫：換個講法，意思留著，要能接回原文的上下文。【】裡的字詞別再用，也別換成意思相近的公文腔。標〔整句〕的把句子骨架換掉，像跟朋友講這件事那樣寫。
+
+照編號輸出，一行一句，只輸出改好的句子。
+
+原文：
+{text}
+
+要改的句子：
+{lines}"""
+
+
+def _marked_sentence(sent, spans, whole):
+    for sp in sorted(spans, key=len, reverse=True):
+        sent = re.sub(re.escape(sp) + r"(?!】)", "【" + sp + "】", sent)
+    return ("〔整句〕" if whole else "") + sent.strip()
+
+
+def _repair_sentences(text, result):
+    """Rewrite only the flagged sentences and splice them back. A rewrite is kept only if it is clean itself."""
+    sents = result["sentences"]
+    spans = {}
+    for h in result["hits"]:
+        for si in h["sentences"]:
+            spans.setdefault(si, set()).add(surface(h["gram"]))
+    idx = sorted(set(spans) | set(result["flow"]))
+    if not idx:
+        return text
+    lines = "\n".join(f"{n}. {_marked_sentence(sents[si], spans.get(si, ()), si in result['flow'])}" for n, si in enumerate(idx, 1))
+    out = llm.write(SYSTEM, [{"role": "user", "content": LINES.format(text=text, lines=lines)}])
+    for m in re.finditer(r"(?m)^\s*(\d+)[.、．)]\s*(.+)$", out):
+        n, new = int(m.group(1)), m.group(2).strip().replace("【", "").replace("】", "").replace("〔整句〕", "")
+        if 1 <= n <= len(idx) and not any(h["kind"] == "ban" for h in check(new)["hits"]):
+            old = sents[idx[n - 1]]
+            lead = old[:len(old) - len(old.lstrip())]
+            text = text.replace(old, lead + new, 1)
+    return text
+
+
 def run(request: str):
     """Yields events: draft -> (repair)* -> final. Each carries the text and its gate result."""
     text = llm.write(SYSTEM, [{"role": "user", "content": request}])
@@ -48,11 +90,15 @@ def run(request: str):
     for rnd in range(1, MAX_ROUNDS + 1):
         if result["ok"]:
             break
-        prompt = REPAIR.format(shape=_shape_note(result["shape"]), text=mark(text, result["hits"], result["flow"]))
-        text = llm.write(SYSTEM, [{"role": "user", "content": prompt}]).replace("【", "").replace("】", "").replace("〔", "").replace("〕", "")
+        if result["hits"] or result["flow"]:
+            text = _repair_sentences(text, result)
+        else:                                   # only the overall shape is off: one pass over the whole text
+            prompt = REPAIR.format(shape=_shape_note(result["shape"]), text=text)
+            text = llm.write(SYSTEM, [{"role": "user", "content": prompt}]).replace("【", "").replace("】", "").replace("〔", "").replace("〕", "")
         result = check(text)
         if _cost(result) <= best_n:
             best, best_n = (text, result), _cost(result)
+        text, result = best                      # never continue from a worse version
         yield {"type": "repair", "round": rnd, "text": text, "marked": mark(text, result["hits"], result["flow"]), "check": _public(result)}
     text, result = best
     yield {"type": "final", "text": text, "check": _public(result)}

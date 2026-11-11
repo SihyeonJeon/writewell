@@ -115,7 +115,7 @@ async function send(text){
   $('#send').disabled = true;
   const t0 = performance.now();
   let model = '', said = false;
-  const res = await fetch('/api/chat', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({messages: history, last_had_meme: lastMeme})});
+  const res = await fetch('/api/chat', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({messages: history})});
   const rd = res.body.getReader(), dec = new TextDecoder(); let buf = '';
   for (;;) {
     const {done, value} = await rd.read(); if (done) break;

@@ -6,6 +6,8 @@ Env:  CHAT_BASE_URL / CHAT_MODEL   OpenAI-compatible endpoint for the fine-tuned
 """
 import json
 import mimetypes
+import os
+import time
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -15,6 +17,20 @@ from gate.check import check, mark
 
 HERE = Path(__file__).parent
 PLAIN_SYSTEM = "You are a helpful assistant."
+
+
+# Playback pacing (seconds before each event) when WW_REPLAY points at a recording of real outputs.
+PACE = {"route": 0.3, "message": 0.9, "artifact_open": 0.2, "draft": 2.2, "repair": 2.0, "final": 0.8, "baseline": 0.6}
+
+
+def _recorded(user):
+    path = os.environ.get("WW_REPLAY")
+    if not path or not Path(path).exists():
+        return None
+    for t in json.loads(Path(path).read_text())["turns"]:
+        if t["user"] == user:
+            return t["events"]
+    return None
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -35,8 +51,9 @@ class Handler(BaseHTTPRequestHandler):
         if self.path in ("/", "/index.html"):
             return self._file(HERE / "index.html", "text/html; charset=utf-8")
         if self.path.startswith("/memes/"):
-            name = Path(self.path).name
-            return self._file(chat.MEMES / name)
+            target = (chat.MEMES / self.path[len("/memes/"):]).resolve()
+            if chat.MEMES.resolve() in target.parents:
+                return self._file(target)
         self.send_error(404)
 
     def _event(self, obj):
@@ -47,25 +64,32 @@ class Handler(BaseHTTPRequestHandler):
         if self.path != "/api/chat":
             return self.send_error(404)
         body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
-        history, last_meme = body["messages"], body.get("last_had_meme", False)
+        history = body["messages"]
         user = history[-1]["content"]
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream; charset=utf-8")
         self.send_header("Cache-Control", "no-cache")
         self.end_headers()
+        rec = None if body.get("live") else _recorded(user)
+        if rec:
+            for ev in rec:
+                time.sleep(PACE.get(ev["type"], 0.2))
+                self._event(ev)
+            return self._event({"type": "done"})
         try:
-            if chat.route(user) == "write":
-                self._write(history, user)
+            to, by = chat.route(history)
+            if to == "write":
+                self._write(history, user, by)
             else:
-                text, model = chat.reply(history)
-                self._event({"type": "route", "to": "chat", "model": model})
-                self._event({"type": "message", "text": text, "meme": chat.pick_meme(user, text, last_meme)})
+                text, model, meme = chat.reply(history)
+                self._event({"type": "route", "to": "chat", "model": model, "by": by})
+                self._event({"type": "message", "text": text, "meme": meme})
         except Exception as e:  # noqa: BLE001 - show the failure in the UI instead of a hung stream
             self._event({"type": "error", "text": repr(e)[:300]})
         self._event({"type": "done"})
 
-    def _write(self, history, user):
-        self._event({"type": "route", "to": "write", "model": llm.WRITE_MODEL + " + style gate"})
+    def _write(self, history, user, by="rule"):
+        self._event({"type": "route", "to": "write", "model": llm.WRITE_MODEL + " + style gate", "by": by})
         self._event({"type": "artifact_open"})
         lock = threading.Lock()
 

@@ -17,17 +17,39 @@ def test_repair_instruction_has_no_banned_terms():
 
 def test_persona_has_no_banned_terms():
     assert _hits(chat.PERSONA) == []
+    assert _hits(chat.ACK) == []
+
+
+def test_sentence_repair_instruction_has_no_banned_terms():
+    assert _hits(writer.LINES.format(text="", lines="")) == []
 
 
 def test_route_is_deterministic():
-    assert chat.route("幫我寫一篇關於珍珠奶茶的文章") == "write"
-    assert chat.route("可以寫封信給房東嗎") == "write"
-    assert chat.route("write me a post about night markets") == "write"
-    assert chat.route("今天好累喔") == "chat"
-    assert chat.route("你覺得我該不該換工作") == "chat"
+    r = lambda t: chat.route([{"role": "user", "content": t}])[0]
+    assert r("幫我寫一篇關於珍珠奶茶的文章") == "write"
+    assert r("可以寫封信給房東嗎") == "write"
+    assert r("write me a post about night markets") == "write"
+    assert r("今天好累喔") == "chat"
+    assert r("你覺得我該不該換工作") == "chat"
 
 
 def test_gate_flags_and_marks():
     r = check("出發前先確認時間，而不是到了才問。")
     grams = {h["gram"] for h in r["hits"]}
     assert "確認" in grams and "而 不是" in grams
+
+
+def test_meme_lines_have_no_banned_terms():
+    from agent.skills import memes
+    for p in memes.pins():
+        assert _hits(p.get("say", "")) == [], p["card"]
+    assert _hits(memes.hint({"say": None, "phrase": "x"})) == []
+
+
+def test_pinned_situations_pick_their_card():
+    from agent.skills import memes
+    if not memes.cards():
+        return
+    assert memes.pick("欸我們年初說要去花蓮，到現在都沒人訂票")["id"] == "ven-again"
+    assert memes.pick("禮拜一就開了六個會，說好的輕鬆禮拜一咧")["id"] == "holding-on-pirate"
+    assert memes.pick("你覺得宇宙有盡頭嗎") is None
