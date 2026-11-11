@@ -1,0 +1,9 @@
+.venv/
+out/
+data/
+models/
+__pycache__/
+.env
+logs/
+memes/*
+!memes/manifest.example.json
