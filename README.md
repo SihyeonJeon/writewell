@@ -63,6 +63,15 @@ This is a checkpoint from partway through training (step 2100, eval loss 3.22, s
 run finished, so the model is weaker than it will be: it answers one message at a time, and good replies come from sampling
 several and keeping the ones that pass the gate.
 
+### Before and after fine-tuning
+
+The same 8 chat prompts (`PROBES` in `train/finetune.py`) were run on the base model and on the checkpoint.
+
+| | base Gemma | after fine-tuning |
+|---|---|---|
+| form | every bit of small talk answered as a counseling report | the length and tone of a friend leaving a comment |
+| script | one reply came back in Simplified Chinese | all 8 in Traditional Chinese |
+
 ## Reaction memes
 
 `agent/skills/memes.py` answers with a meme when one fits and with none when nothing does. The library
