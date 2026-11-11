@@ -73,3 +73,22 @@ def test_interface_text_has_no_banned_terms():
     html = Path(__file__).resolve().parent.parent.joinpath("web", "index.html").read_text()
     strings = re.findall(r"[\u4e00-\u9fff][\u4e00-\u9fff，。、…！？ ]*", re.sub(r"<style>.*?</style>", "", html, flags=re.S))
     assert _hits("。".join(strings)) == []
+
+
+def test_finetuned_chat_model_gets_no_instructions():
+    from agent import context
+    h = [{"role": "user", "content": "今天又加班到九點，我好累 XD"}]
+    system, window = context.chat(h, {"say": "x", "phrase": "y"}, "finetuned")
+    assert system is None and window == h
+    system, _ = context.chat(h, None, "instructed")
+    assert system == context.PERSONA
+
+
+def test_writer_gets_related_earlier_turns():
+    from agent import context
+    h = [{"role": "user", "content": "今天又加班到九點，我好累 XD"}, {"role": "assistant", "content": "辛苦啦"},
+         {"role": "user", "content": "欸我們年初說要去花蓮，到現在都沒人訂票"}, {"role": "assistant", "content": "還去不去"},
+         {"role": "user", "content": "幫我寫一篇揪大家去花蓮的貼文"}]
+    req = context.writing(h)
+    assert "年初說要去花蓮" in req and "加班" not in req
+    assert _hits(req.replace(h[2]["content"], "").replace(h[4]["content"], "")) == []

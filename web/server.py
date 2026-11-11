@@ -17,7 +17,6 @@ Event stream (SSE) for one turn:
 import json
 import mimetypes
 import os
-import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -37,10 +36,8 @@ def load_env():
 
 
 load_env()
-from agent import chat, llm, writer  # noqa: E402  (after the environment is loaded)
-from gate.check import check, mark  # noqa: E402
+from agent import chat, core  # noqa: E402  (after the environment is loaded)
 
-PLAIN_SYSTEM = "You are a helpful assistant."
 # Pacing (seconds before an event) when WW_REPLAY plays back a recording of real outputs.
 PACE = {"thinking": 0.25, "route": 0.9, "delta": 0.028, "message_end": 0.15, "artifact_open": 0.3, "step": 0.9,
         "draft": 0.6, "repair": 0.5, "final": 0.5, "baseline": 0.4}
@@ -54,10 +51,6 @@ def recorded(user):
         if t["user"] == user:
             return t["events"]
     return None
-
-
-def pieces(text, n=3):
-    return [text[i:i + n] for i in range(0, len(text), n)]
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -104,58 +97,14 @@ class Handler(BaseHTTPRequestHandler):
                     time.sleep(PACE.get(ev["type"], 0.2))
                     self._event(ev)
             else:
-                self._turn(history, user)
+                for ev in core.turn(history):
+                    self._event(ev)
             self._event({"type": "done"})
         except (BrokenPipeError, ConnectionResetError):
             return                                   # the reader pressed stop
         except Exception as e:  # noqa: BLE001 - show the failure in the UI instead of a hung stream
             self._event({"type": "error", "text": repr(e)[:300]})
             self._event({"type": "done"})
-
-    def _turn(self, history, user):
-        self._event({"type": "thinking", "label": "讀訊息"})
-        to, by = chat.route(history)
-        if to == "write":
-            return self._write(history, user, by)
-        text, model, meme = chat.reply(history)
-        self._event({"type": "route", "to": "chat", "model": model, "by": by})
-        for p in pieces(text):
-            self._event({"type": "delta", "text": p})
-        self._event({"type": "message_end", "meme": meme, "model": model})
-
-    def _write(self, history, user, by):
-        model = llm.WRITE_MODEL
-        self._event({"type": "route", "to": "write", "model": model, "by": by})
-        text, chat_model = chat.ack(history)
-        for p in pieces(text):
-            self._event({"type": "delta", "text": p})
-        self._event({"type": "message_end", "meme": None, "model": chat_model})
-        self._event({"type": "artifact_open"})
-        lock = threading.Lock()
-
-        def baseline():
-            try:
-                t = llm.claude(PLAIN_SYSTEM, [{"role": "user", "content": user}], model)
-                r = check(t)
-                with lock:
-                    self._event({"type": "baseline", "text": t, "marked": mark(t, r["hits"], r["flow"]), "check": writer._public(r)})
-            except Exception:  # noqa: BLE001 - the comparison tab is optional
-                pass
-
-        side = threading.Thread(target=baseline, daemon=True)
-        side.start()
-        with lock:
-            self._event({"type": "step", "id": "draft", "label": "起草", "state": "start"})
-        for ev in writer.run(user):
-            with lock:
-                n = ev["check"]["flagged"] + ev["check"]["flow"]
-                if ev["type"] == "draft":
-                    self._event({"type": "step", "id": "draft", "label": "起草", "state": "ok"})
-                    self._event({"type": "step", "id": "check", "label": f"檢查用詞 · {n} 處", "state": "ok"})
-                elif ev["type"] == "repair":
-                    self._event({"type": "step", "id": f"r{ev['round']}", "label": f"改寫第 {ev['round']} 輪 · 剩 {n} 處", "state": "ok"})
-                self._event(ev)
-        side.join(timeout=240)
 
 
 if __name__ == "__main__":

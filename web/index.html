@@ -214,7 +214,8 @@ function aiNode(m, last){
 function paintSteps(d, m){ d.querySelector('.steps').innerHTML = (m.steps || []).map(s => `<span class="step ${s.state === 'ok' ? 'ok' : 'run'}">${s.state === 'ok' ? I.ok : I.run}${esc(s.label)}</span>`).join('') }
 function paintExtra(d, m){
   const x = d.querySelector('.extra'); x.innerHTML = '';
-  if (m.meme) { const im = new Image(); im.className = 'meme'; im.src = m.meme.url; im.alt = m.meme.alt || ''; im.onload = () => toBottom(); x.appendChild(im) }
+  if (m.meme?.url) { const im = new Image(); im.className = 'meme'; im.src = m.meme.url; im.alt = m.meme.alt || ''; im.onload = () => toBottom(); x.appendChild(im) }
+  if (m.meme?.caption) { const p = document.createElement('div'); p.className = 'text'; p.style.marginTop = '6px'; p.textContent = m.meme.caption; x.appendChild(p) }
   const a = m.art && conv()?.arts?.[m.art];
   if (a && a.final) {
     const b = document.createElement('button'); b.className = 'card';

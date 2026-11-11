@@ -54,7 +54,7 @@ _LEAD = re.compile(r"^[^\w#*「《（\u4e00-\u9fff]+")      # stray leading symb
 _JUNK = re.compile(r"<\/?(thinking|reasoning)[\w_]*>|═{5,}|\ufffd|^\s*(The user|User wa)", re.M)
 
 
-def chat(system: str, messages: list[dict]) -> tuple[str, str]:
+def chat(system, messages: list[dict]) -> tuple[str, str]:
     """Returns (text, model label).
 
     CHAT_BASE_URL      live endpoint serving the fine-tuned chat model (OpenAI-compatible)
@@ -69,11 +69,11 @@ def chat(system: str, messages: list[dict]) -> tuple[str, str]:
             return answers[messages[-1]["content"]].strip(), model
     if base:
         d = _post(base.rstrip("/") + "/chat/completions",
-                  {"model": model, "messages": [{"role": "system", "content": system}] + messages,
+                  {"model": model, "messages": ([{"role": "system", "content": system}] if system else []) + messages,
                    "temperature": 0.8, "max_tokens": 400},
                   {"Authorization": "Bearer " + os.environ.get("CHAT_API_KEY", "none")}, timeout=60)
         return d["choices"][0]["message"]["content"].strip(), model
-    return claude(system, messages, FALLBACK_CHAT_MODEL, max_tokens=400).strip(), FALLBACK_CHAT_MODEL
+    return claude(system or "", messages, FALLBACK_CHAT_MODEL, max_tokens=400).strip(), FALLBACK_CHAT_MODEL
 
 
 def write(system: str, messages: list[dict]) -> str:
