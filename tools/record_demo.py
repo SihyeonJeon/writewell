@@ -24,11 +24,12 @@ for user in script:
                 ev = json.loads(line[6:])
                 if ev["type"] != "done":
                     events.append(ev)
+    said = "".join(ev["text"] for ev in events if ev["type"] == "delta")
+    if said:
+        history.append({"role": "assistant", "content": said})
     for ev in events:
-        if ev["type"] == "message":
-            history.append({"role": "assistant", "content": ev["text"]})
         if ev["type"] == "error":
             sys.exit(f"error on {user!r}: {ev['text']}")
     turns.append({"user": user, "events": events})
-    print(user, "->", [e["type"] for e in events], flush=True)
+    print(user, "->", said, [e["type"] for e in events if e["type"] not in ("delta", "thinking")], flush=True)
 (ROOT / "demo" / "recording.json").write_text(json.dumps({"turns": turns}, ensure_ascii=False, indent=1))

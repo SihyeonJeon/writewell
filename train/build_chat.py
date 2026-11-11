@@ -8,6 +8,7 @@ Row:   {"messages": [{"role": "user"|"assistant", "content": str}, ...], "source
 """
 import hashlib
 import json
+import os
 import random
 import re
 from collections import Counter
@@ -52,6 +53,12 @@ def thread_rows(r):
     src = r["source"]
     if r.get("board") in SKIP_BOARDS or not r.get("comments") or r.get("partial"):
         return
+    if src == "bahamut":
+        # Bahamut titles carry a topic tag. Chatty tags only: notices, guides, news and submission threads
+        # are announcements with template replies, not conversation.
+        tag = re.match(r"^(RE:)?\s*【([^】]{1,6})】", r.get("title", ""))
+        if not tag or tag.group(2) not in ("閒聊", "問題", "討論", "心得"):
+            return
     post = clean(r["text"])
     if len(post) < MIN_POST.get(src, 30) or len(post) > MAX_POST or SPAM.search(post):
         return
@@ -62,7 +69,7 @@ def thread_rows(r):
         # the OP's own follow-ups and replies aimed at another commenter need context we do not keep
         if c["op"] or re.search(r"[Bb]\d+|wrote:|引用|樓上|\d+樓", c["text"][:40]):
             continue
-        t = clean(c["text"])
+        t = clean(re.sub(r"\[[\w.\-]+:[^\]]{1,20}\]", "", c["text"]))     # Bahamut "[id:nickname]" mentions
         if reply_ok(t):
             cands.append((c.get("likes") or 0, -c["floor"], t))
     year = (r.get("created") or "")[:4]
@@ -88,6 +95,18 @@ def main():
                 rows.append(row)
                 stats[row["source"]] += 1
     random.Random(0).shuffle(rows)
+    min_year = os.environ.get("MIN_YEAR")
+    if min_year:
+        # Continuation set: only posts written from MIN_YEAR on, minus anything in the existing eval split,
+        # so the eval loss of the first run stays comparable.
+        held = {json.loads(x)["messages"][-1]["content"] for x in open(OUT / "eval.jsonl")}
+        recent = [r for r in rows if r["year"] >= min_year and r["messages"][-1]["content"] not in held]
+        with open(OUT / "chat_recent.jsonl", "w") as fo:
+            for r in recent:
+                fo.write(json.dumps(r, ensure_ascii=False) + "\n")
+        print("recent rows", len(recent), dict(Counter(r["source"] for r in recent)),
+              sorted(Counter(r["year"] for r in recent).items()))
+        return
     n_eval = min(500, len(rows) // 20)
     for name, part in (("eval", rows[:n_eval]), ("chat", rows[n_eval:])):
         with open(OUT / f"{name}.jsonl", "w") as fo:

@@ -4,6 +4,7 @@ Recipe follows Unsloth's Gemma 4 text guide (FastModel, gemma-4 chat template, l
 Everything persistent lives in WORK (Google Drive), so a dropped Colab session resumes from the last checkpoint.
 
 Env:  MODEL (default unsloth/gemma-4-E4B-it)  WORK (default /content/drive/MyDrive/writewell)
+      INIT (adapter/checkpoint dir to continue from)  DATA (chat)  TAG (run dir suffix)
       MAX_ROWS (0 = all)  EPOCHS (1)  BATCH (8)  ACCUM (2)  LR (2e-4)  RANK (16)  SEQ (1024)
 """
 import json
@@ -21,7 +22,9 @@ from trl import SFTConfig, SFTTrainer
 E = os.environ.get
 MODEL = E("MODEL", "unsloth/gemma-4-E4B-it")
 WORK = Path(E("WORK", "/content/drive/MyDrive/writewell"))
-RUN = WORK / "runs" / MODEL.split("/")[-1]
+INIT = E("INIT")                    # adapter or checkpoint dir to continue from (second-stage training)
+DATA = E("DATA", "chat")            # data/<DATA>.jsonl
+RUN = WORK / "runs" / (MODEL.split("/")[-1] + ("-" + E("TAG") if E("TAG") else ""))
 RUN.mkdir(parents=True, exist_ok=True)
 SEQ = int(E("SEQ", "1024"))
 
@@ -53,7 +56,7 @@ def generate(model, tok, prompts):
 
 
 def main():
-    model, tok = FastModel.from_pretrained(model_name=MODEL, dtype=None, max_seq_length=SEQ,
+    model, tok = FastModel.from_pretrained(model_name=INIT or MODEL, dtype=None, max_seq_length=SEQ,
                                            load_in_4bit=True, full_finetuning=False)
     tok = get_chat_template(tok, chat_template="gemma-4")
     base_file = RUN / "samples_base.json"
@@ -61,9 +64,11 @@ def main():
         base_file.write_text(json.dumps(generate(model, tok, PROBES), ensure_ascii=False, indent=1))
 
     r = int(E("RANK", "16"))
-    model = FastModel.get_peft_model(model, finetune_vision_layers=False, finetune_language_layers=True,
-                                     finetune_attention_modules=True, finetune_mlp_modules=True,
-                                     r=r, lora_alpha=r, lora_dropout=0, bias="none", random_state=3407)
+    if not INIT:                    # a loaded adapter is already a PEFT model: keep training the same weights
+      model = FastModel.get_peft_model(model, finetune_vision_layers=False,
+                                       finetune_language_layers=True,
+                                       finetune_attention_modules=True, finetune_mlp_modules=True,
+                                       r=r, lora_alpha=r, lora_dropout=0, bias="none", random_state=3407)
 
     def fmt(batch):
         texts = [tok.apply_chat_template(typed(m), tokenize=False, add_generation_prompt=False).removeprefix("<bos>")
@@ -71,7 +76,7 @@ def main():
         return {"text": texts}
 
     keep = lambda rs: Dataset.from_list([{"messages": x["messages"]} for x in rs]).map(fmt, batched=True)  # noqa: E731
-    train, evals = keep(rows("chat", int(E("MAX_ROWS", "0")))), keep(rows("eval"))
+    train, evals = keep(rows(DATA, int(E("MAX_ROWS", "0")))), keep(rows("eval"))
     print("train rows", len(train), "eval rows", len(evals), "\n", train[0]["text"][:400])
 
     trainer = SFTTrainer(
@@ -96,7 +101,7 @@ def main():
     model.save_pretrained(str(RUN / "adapter"))
     tok.save_pretrained(str(RUN / "adapter"))
     (RUN / "samples_tuned.json").write_text(json.dumps(generate(model, tok, PROBES), ensure_ascii=False, indent=1))
-    report = {"model": MODEL, "train_rows": len(train), "eval_loss_before": before.get("eval_loss"),
+    report = {"model": MODEL, "init": INIT, "data": DATA, "train_rows": len(train), "eval_loss_before": before.get("eval_loss"),
               "eval_loss_after": after.get("eval_loss"), "train_loss": stats.training_loss,
               "minutes": round((time.time() - t0) / 60, 1), "gpu": torch.cuda.get_device_name(0),
               "peak_vram_gb": round(torch.cuda.max_memory_reserved() / 2**30, 1)}

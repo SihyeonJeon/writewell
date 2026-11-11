@@ -55,16 +55,25 @@ _JUNK = re.compile(r"<\/?(thinking|reasoning)[\w_]*>|═{5,}|\ufffd|^\s*(The use
 
 
 def chat(system: str, messages: list[dict]) -> tuple[str, str]:
-    """Returns (text, model label)."""
-    base = os.environ.get("CHAT_BASE_URL")
+    """Returns (text, model label).
+
+    CHAT_BASE_URL      live endpoint serving the fine-tuned chat model (OpenAI-compatible)
+    CHAT_ANSWERS_FILE  answers collected from that model offline: {"<user message>": "<its reply>"}
+    neither            a small Claude model answers so the app still runs
+    """
+    base, cached = os.environ.get("CHAT_BASE_URL"), os.environ.get("CHAT_ANSWERS_FILE")
+    model = os.environ.get("CHAT_MODEL", "chat")
+    if cached and os.path.exists(cached):
+        answers = json.load(open(cached, encoding="utf-8"))
+        if messages[-1]["content"] in answers:
+            return answers[messages[-1]["content"]].strip(), model
     if base:
-        model = os.environ.get("CHAT_MODEL", "gemma")
         d = _post(base.rstrip("/") + "/chat/completions",
                   {"model": model, "messages": [{"role": "system", "content": system}] + messages,
                    "temperature": 0.8, "max_tokens": 400},
                   {"Authorization": "Bearer " + os.environ.get("CHAT_API_KEY", "none")}, timeout=60)
         return d["choices"][0]["message"]["content"].strip(), model
-    return claude(system, messages, FALLBACK_CHAT_MODEL, max_tokens=400).strip(), FALLBACK_CHAT_MODEL + " (stand-in for gemma)"
+    return claude(system, messages, FALLBACK_CHAT_MODEL, max_tokens=400).strip(), FALLBACK_CHAT_MODEL
 
 
 def write(system: str, messages: list[dict]) -> str:

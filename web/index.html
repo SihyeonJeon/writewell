@@ -5,150 +5,332 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>小寫</title>
 <style>
-:root{--bg:#fbfaf7;--panel:#fff;--ink:#1d1b16;--mute:#77726a;--line:#e8e4dc;--me:#1d1b16;--me-ink:#fbfaf7;--accent:#b4532a;--flag:#fde3d6;--ok:#2f6b4f}
-@media (prefers-color-scheme:dark){:root{--bg:#161512;--panel:#1e1c18;--ink:#ece8df;--mute:#9a948a;--line:#33302a;--me:#ece8df;--me-ink:#161512;--accent:#e08a5f;--flag:#5a2f1e;--ok:#7fc4a0}}
+:root{--bg:#ffffff;--side:#f3f4f6;--panel:#fff;--ink:#14171c;--mute:#667080;--faint:#9aa3b0;--line:#e4e7ec;--hover:#e9ecf1;--me:#eef1f5;--accent:#2f5bea;--flag:#ffe1dc;--ok:#1f8a5b;--btn:#14171c;--btn-ink:#fff;--shadow:0 6px 24px rgba(20,30,50,.08)}
+:root[data-theme=dark]{--bg:#0f1115;--side:#0a0c0f;--panel:#161920;--ink:#e8eaee;--mute:#98a1ae;--faint:#626b78;--line:#262a33;--hover:#1d212a;--me:#1f232c;--accent:#7b9cff;--flag:#5a2622;--ok:#5fcf9a;--btn:#e8eaee;--btn-ink:#0f1115;--shadow:0 6px 24px rgba(0,0,0,.45)}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f1115;--side:#0a0c0f;--panel:#161920;--ink:#e8eaee;--mute:#98a1ae;--faint:#626b78;--line:#262a33;--hover:#1d212a;--me:#1f232c;--accent:#7b9cff;--flag:#5a2622;--ok:#5fcf9a;--btn:#e8eaee;--btn-ink:#0f1115;--shadow:0 6px 24px rgba(0,0,0,.45)}}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
-body{background:var(--bg);color:var(--ink);font:16px/1.65 -apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;display:flex}
-#chat{flex:1 1 0;min-width:0;display:flex;flex-direction:column;height:100%}
-header{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:10px}
-header b{font-size:17px}
-header span{color:var(--mute);font-size:13px}
-#log{flex:1;overflow-y:auto;padding:24px 20px 8px}
-.wrap{max-width:720px;margin:0 auto}
-.row{display:flex;margin:0 0 14px;flex-direction:column;align-items:flex-start}
-.row.me{align-items:flex-end}
-.bubble{max-width:82%;padding:9px 14px;border-radius:18px;white-space:pre-wrap;word-break:break-word;background:var(--panel);border:1px solid var(--line)}
-.me .bubble{background:var(--me);color:var(--me-ink);border-color:var(--me)}
-.tag{font-size:11.5px;color:var(--mute);margin:3px 6px 0;font-variant-numeric:tabular-nums}
-.meme{max-width:240px;border-radius:14px;margin-top:6px;border:1px solid var(--line);display:block}
-.card{margin-top:6px;padding:10px 14px;border:1px solid var(--line);border-radius:14px;background:var(--panel);cursor:pointer;font-size:14px}
-.card b{display:block}
+body{background:var(--bg);color:var(--ink);font:15.5px/1.7 -apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;display:flex;overflow:hidden;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* sidebar */
+#side{flex:0 0 264px;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;height:100%;transition:margin-left .25s ease}
+body.noside #side{margin-left:-264px}
+.brand{display:flex;align-items:center;gap:10px;padding:16px 16px 10px}
+.logo{width:30px;height:30px;border-radius:9px;background:var(--btn);color:var(--btn-ink);display:grid;place-items:center;font-weight:700;font-size:15px}
+.brand b{font-size:16px}
+.new{margin:6px 12px 10px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;gap:8px;background:var(--panel);font-size:14.5px}
+.new:hover,.conv:hover,.ic:hover{background:var(--hover)}
+.label{padding:10px 18px 4px;font-size:12px;color:var(--faint)}
+#convs{flex:1;overflow-y:auto;padding:0 8px}
+.conv{display:block;width:100%;text-align:left;padding:7px 10px;border-radius:8px;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv.on{background:var(--hover);font-weight:600}
+.models{border-top:1px solid var(--line);padding:12px 16px 14px;font-size:12.5px;color:var(--mute);display:grid;gap:5px}
+.models div{display:flex;justify-content:space-between;gap:8px}
+.models b{color:var(--ink);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* main */
+#main{flex:1 1 0;min-width:0;display:flex;flex-direction:column;height:100%;position:relative}
+.bar{height:52px;display:flex;align-items:center;gap:6px;padding:0 12px;flex:none}
+.bar h1{font-size:15px;font-weight:600;margin:0 6px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:var(--mute)}
+#log{flex:1;overflow-y:auto;padding:8px 20px 24px}
+.col{max-width:740px;margin:0 auto}
+.msg{display:flex;gap:12px;margin:0 0 22px}
+.msg.me{justify-content:flex-end}
+.me .text{background:var(--me);padding:9px 15px;border-radius:20px;max-width:78%;white-space:pre-wrap;word-break:break-word}
+.av{width:30px;height:30px;border-radius:9px;background:var(--btn);color:var(--btn-ink);display:grid;place-items:center;font-size:13.5px;font-weight:700;flex:none;margin-top:1px}
+.body{min-width:0;flex:1}
+.ai .text{white-space:pre-wrap;word-break:break-word;padding-top:2px}
+.ai .text:empty{display:none}
+.caret::after{content:"";display:inline-block;width:7px;height:1.05em;background:var(--ink);margin-left:2px;vertical-align:-3px;border-radius:2px;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.think{font-size:14.5px;background:linear-gradient(90deg,var(--mute) 30%,var(--line) 50%,var(--mute) 70%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shim 1.6s linear infinite;padding-top:3px}
+@keyframes shim{to{background-position:-200% 0}}
+.steps{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 2px}
+.steps:empty{display:none}
+.step{font-size:12.5px;border:1px solid var(--line);border-radius:14px;padding:2px 10px 2px 8px;color:var(--mute);display:flex;align-items:center;gap:5px;background:var(--panel);animation:pop .3s ease}
+.step svg{width:13px;height:13px}
+.step.ok svg{color:var(--ok)}
+.step.run svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.meme{display:block;max-width:260px;max-height:320px;border-radius:14px;margin-top:10px;border:1px solid var(--line);animation:pop .35s ease}
+@keyframes pop{from{opacity:0;transform:translateY(6px) scale(.97)}}
+.card{margin-top:10px;display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid var(--line);border-radius:14px;background:var(--panel);max-width:380px;text-align:left;width:100%;animation:pop .35s ease}
+.card:hover{border-color:var(--faint)}
+.card .doc{width:36px;height:36px;border-radius:9px;background:var(--me);display:grid;place-items:center;flex:none}
+.card b{display:block;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card span{color:var(--mute);font-size:12.5px}
-.dots span{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--mute);margin-right:4px;animation:b 1s infinite}
-.dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}
-@keyframes b{0%,60%,100%{opacity:.25}30%{opacity:1}}
-form{padding:12px 20px 20px}
-.box{max-width:720px;margin:0 auto;display:flex;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:6px 6px 6px 16px}
-#in{flex:1;border:0;outline:0;background:transparent;color:inherit;font:inherit;padding:6px 0}
-button{font:inherit;border:0;border-radius:16px;padding:6px 16px;background:var(--me);color:var(--me-ink);cursor:pointer}
-button:disabled{opacity:.4}
-#art{flex:0 0 0;width:0;overflow:hidden;border-left:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;height:100%;transition:flex-basis .35s ease}
-#art.open{flex-basis:min(52%,760px)}
-#art .top{padding:12px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;white-space:nowrap}
-.tab{padding:4px 12px;border-radius:14px;font-size:13.5px;background:transparent;color:var(--mute);border:1px solid var(--line)}
-.tab.on{background:var(--me);color:var(--me-ink);border-color:var(--me)}
-#close{margin-left:auto;background:transparent;color:var(--mute);padding:4px 8px}
-#meter{padding:10px 20px;border-bottom:1px solid var(--line);font-size:13px;color:var(--mute);display:flex;gap:14px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
-#meter b{color:var(--ink);font-weight:600}
-#meter .bad b{color:var(--accent)}#meter .good b{color:var(--ok)}
-#doc{flex:1;overflow-y:auto;padding:28px 36px 60px;white-space:pre-wrap;font-family:"Noto Serif TC","Songti TC",serif;font-size:17px;line-height:1.95}
-#doc h1{font-size:24px;line-height:1.4;margin:0 0 18px;font-weight:700}
-#empty{padding:18vh 0 0;text-align:center}
-#empty h2{font-size:26px;margin:0 0 8px;font-weight:700}
-#empty p{color:var(--mute);margin:0 0 22px}
-.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-.chip{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:18px;padding:7px 14px;font-size:14.5px}
-mark{background:var(--flag);color:inherit;border-radius:3px;padding:0 2px}
+.card div{min-width:0}
+.meta{display:flex;align-items:center;gap:4px;margin-top:6px;color:var(--faint);font-size:12px;min-height:26px}
+.chip{border:1px solid var(--line);border-radius:10px;padding:0 8px;line-height:20px;margin-right:4px}
+.meta .ic{width:26px;height:26px;border-radius:7px;opacity:0;transition:opacity .15s}
+.meta .ic svg{width:15px;height:15px}
+.msg:hover .meta .ic,.msg:last-child .meta .ic{opacity:1}
+#down{position:absolute;left:50%;transform:translateX(-50%);bottom:112px;background:var(--panel);border:1px solid var(--line);border-radius:18px;width:36px;height:36px;display:none;place-items:center;box-shadow:var(--shadow)}
+#down.show{display:grid}
+
+/* empty state */
+#empty{padding:16vh 0 0;text-align:center}
+#empty .logo{width:46px;height:46px;border-radius:13px;font-size:22px;margin:0 auto 16px}
+#empty h2{font-size:27px;margin:0 0 26px;font-weight:700}
+#empty p{color:var(--mute);margin:0 0 26px}
+.sugs{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;text-align:left}
+.sug{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:12px 14px;font-size:14.5px;text-align:left}
+.sug:hover{border-color:var(--faint)}
+.sug small{display:block;color:var(--faint);font-size:12px;margin-bottom:2px}
+
+/* composer */
+#f{padding:0 20px 18px;flex:none}
+.box{max-width:740px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:10px 10px 10px 18px;display:flex;align-items:flex-end;gap:8px;box-shadow:var(--shadow)}
+#in{flex:1;border:0;outline:0;resize:none;background:transparent;color:inherit;font:inherit;line-height:1.6;max-height:176px;padding:5px 0}
+#send{width:36px;height:36px;border-radius:18px;background:var(--btn);color:var(--btn-ink);display:grid;place-items:center;flex:none}
+#send:disabled{opacity:.3;cursor:default}
+.hint{max-width:740px;margin:7px auto 0;text-align:center;font-size:11.5px;color:var(--faint)}
+
+/* writing panel */
+#art{flex:0 0 0;width:0;overflow:hidden;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;height:100%;transition:flex-basis .32s cubic-bezier(.2,.8,.2,1)}
+#art.open{flex-basis:min(48%,780px)}
+#art>*{min-width:420px}
+.atop{height:52px;display:flex;align-items:center;gap:8px;padding:0 10px 0 18px;border-bottom:1px solid var(--line);flex:none}
+.atop b{flex:1;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg{display:flex;background:var(--bg);border-radius:10px;padding:3px;font-size:13px}
+.seg button{padding:3px 11px;border-radius:8px;color:var(--mute);white-space:nowrap}
+.seg button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+#vers{display:flex;gap:6px;padding:10px 18px 0;flex-wrap:wrap}
+#vers:empty{display:none}
+.ver{font-size:12.5px;border:1px solid var(--line);border-radius:12px;padding:1px 10px;color:var(--mute)}
+.ver.on{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+#meter{display:flex;align-items:baseline;gap:4px;padding:10px 18px 11px;border-bottom:1px solid var(--line);flex-wrap:wrap;flex:none}
+#meter:empty{display:none}
+.stat{font-size:13px;color:var(--mute);margin-right:14px}
+.stat b{font-size:15px;color:var(--ink);font-weight:650;font-variant-numeric:tabular-nums;margin-right:5px}
+.stat.bad b{color:var(--accent)}.stat.good b{color:var(--ok)}
+.words{font-size:12.5px;color:var(--mute);align-self:center;max-width:100%}
+#doc{flex:1;overflow-y:auto;padding:30px 40px 70px;font-family:"Noto Serif TC","Songti TC","PMingLiU",serif;font-size:17px;line-height:2}
+#doc h2{font-size:25px;line-height:1.45;margin:0 0 22px;font-weight:700}
+#doc p{margin:0 0 1.1em;animation:rise .5s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+mark{background:var(--flag);color:inherit;border-radius:4px;padding:1px 2px}
 u{text-decoration:underline wavy var(--accent);text-underline-offset:5px;text-decoration-thickness:1px}
-@media (max-width:820px){body{flex-direction:column}#art.open{flex-basis:60%;width:100%;border-left:0;border-top:1px solid var(--line)}}
+.wait{display:flex;gap:5px;padding:6px 0}
+.wait i{width:7px;height:7px;border-radius:50%;background:var(--faint);animation:b 1s infinite}
+.wait i:nth-child(2){animation-delay:.15s}.wait i:nth-child(3){animation-delay:.3s}
+@keyframes b{0%,60%,100%{opacity:.25}30%{opacity:1}}
+@media (max-width:900px){#side{position:absolute;z-index:5;box-shadow:var(--shadow)}#art.open{position:absolute;inset:0;z-index:6;flex-basis:auto;width:100%}#art>*{min-width:0}#doc{padding:22px 20px 60px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<section id="chat">
-  <header><b>小寫</b><span>聊天 · 寫東西</span></header>
-  <div id="log"><div class="wrap" id="msgs">
-    <div id="empty">
-      <h2>嗨，我是小寫</h2>
-      <p>想聊什麼都可以。要寫東西的時候跟我說一聲，文章會開在右邊。</p>
-      <div class="chips">
-        <button type="button" class="chip">今天加班到九點，好累喔</button>
-        <button type="button" class="chip">週末去哪裡走走好</button>
-        <button type="button" class="chip">幫我寫一篇關於台北雨天的短文</button>
-      </div>
-    </div>
-  </div></div>
-  <form id="f"><div class="box"><input id="in" autocomplete="off" placeholder="說點什麼，或是叫我寫一篇…" autofocus><button id="send">送出</button></div></form>
-</section>
-<aside id="art">
-  <div class="top">
-    <button class="tab on" data-v="ours">小寫的版本</button>
-    <button class="tab" data-v="base">沒有控制的版本</button>
-    <button id="close" aria-label="關閉">✕</button>
+<nav id="side" aria-label="對話紀錄">
+  <div class="brand"><span class="logo">寫</span><b>小寫</b></div>
+  <button class="new" id="new"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>新對話</button>
+  <div id="convs"></div>
+</nav>
+
+<section id="main">
+  <div class="bar">
+    <button class="ic" id="toggle" aria-label="收合側欄"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></button>
+    <h1 id="title">新對話</h1>
+    <button class="ic" id="theme" aria-label="切換深淺色"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
   </div>
+  <div id="log"><div class="col" id="msgs"></div></div>
+  <button id="down" aria-label="到最下面"><svg viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button>
+  <form id="f">
+    <div class="box">
+      <textarea id="in" rows="1" placeholder="跟小寫說點什麼…" aria-label="訊息"></textarea>
+      <button id="send" aria-label="送出"><svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+    </div>
+  </form>
+</section>
+
+<aside id="art" aria-label="文章">
+  <div class="atop">
+    <b id="atitle">文章</b>
+    <div class="seg"><button data-v="ours" class="on">小寫版</button><button data-v="base">沒有控制的版本</button></div>
+    <button class="ic" id="acopy" aria-label="複製全文"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg></button>
+    <button class="ic" id="aclose" aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div id="vers"></div>
   <div id="meter"></div>
   <div id="doc"></div>
 </aside>
+
 <script>
-const $ = s => document.querySelector(s), msgs = $('#msgs'), log = $('#log');
-let history = [], lastMeme = false, view = 'ours', art = {ours: null, base: null, rounds: []};
+const $ = s => document.querySelector(s), msgsEl = $('#msgs'), log = $('#log'), input = $('#in');
+const I = {
+  ok: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  run: '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9"/></svg>',
+  copy: '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
+  redo: '<svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 4v5h5"/></svg>',
+  doc: '<svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5"/></svg>',
+  up: '<svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+  stop: '<svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" stroke="none"/></svg>',
+};
+const SUGS = ['今天又加班到九點，我好累 XD', '欸我們年初說要去花蓮，到現在都沒人訂票', '幫我寫一篇揪大家去花蓮的貼文'];
+const esc = s => s.replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+const store = { get(k, d){ try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } }, set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)) } catch {} } };
 
-function esc(s){return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
-function row(cls, html){const d = document.createElement('div'); d.className = 'row ' + cls; d.innerHTML = html; msgs.appendChild(d); log.scrollTop = log.scrollHeight; return d}
-function docHtml(text){
-  const t = esc(text.trim()).replace(/【/g, '<mark>').replace(/】/g, '</mark>').replace(/〔/g, '<u>').replace(/〕/g, '</u>');
-  const i = t.indexOf('\n');
-  const title = (i < 0 ? t : t.slice(0, i)).replace(/^#+\s*/, '').replace(/\*\*/g, '');
-  return '<h1>' + title + '</h1>' + (i < 0 ? '' : t.slice(i + 1).replace(/^\n+/, ''));
-}
-function render(){
-  const a = art[view], m = $('#meter'), d = $('#doc');
-  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.v === view));
-  if (!a){ m.innerHTML = ''; d.innerHTML = '<div class="dots"><span></span><span></span><span></span></div>'; return }
-  const c = a.check, bad = c.flagged > 0;
-  let h = `<span class="${bad ? 'bad' : 'good'}">像機器的用詞 <b>${c.flagged}</b> 處</span>`;
-  if (c.shape.machine_like_sentences != null) h += `<span class="${c.flow ? 'bad' : 'good'}">機器句型 <b>${c.shape.machine_like_sentences}</b> 句</span>`;
-  if (c.shape.len_sd != null) h += `<span>句長起伏 <b>${c.shape.len_sd}</b></span>`;
-  if (view === 'ours') h += `<span>改寫 <b>${art.rounds.length}</b> 輪${art.rounds.length ? '（' + art.rounds.join(' → ') + ' → ' + c.flagged + '）' : ''}</span>`;
-  if (bad) h += `<span>${c.hits.slice(0, 8).map(x => esc(x.gram)).join('、')}</span>`;
-  m.innerHTML = h;
-  d.innerHTML = docHtml(a.marked || a.text);
-}
-document.querySelectorAll('.tab').forEach(b => b.onclick = () => { view = b.dataset.v; render() });
-$('#close').onclick = () => $('#art').classList.remove('open');
+let convs = store.get('ww.convs', []), cur = null, busy = null, view = {art: null, tab: 'ours', ver: -1};
+const conv = () => convs.find(c => c.id === cur);
+const save = () => store.set('ww.convs', convs.slice(0, 30));
 
-async function send(text){
-  const em = $('#empty'); if (em) em.remove();
-  history.push({role: 'user', content: text});
-  row('me', `<div class="bubble">${esc(text)}</div>`);
-  const wait = row('', '<div class="bubble dots"><span></span><span></span><span></span></div>');
-  $('#send').disabled = true;
-  const t0 = performance.now();
-  let model = '', said = false;
-  const res = await fetch('/api/chat', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({messages: history})});
-  const rd = res.body.getReader(), dec = new TextDecoder(); let buf = '';
-  for (;;) {
-    const {done, value} = await rd.read(); if (done) break;
-    buf += dec.decode(value, {stream: true});
-    let i; while ((i = buf.indexOf('\n\n')) >= 0) {
-      const ev = JSON.parse(buf.slice(5, i)); buf = buf.slice(i + 2);
-      if (ev.type === 'route') model = ev.model;
-      else if (ev.type === 'artifact_open') { art = {ours: null, base: null, rounds: []}; view = 'ours'; $('#art').classList.add('open'); render() }
-      else if (ev.type === 'message') {
-        wait.remove(); said = true;
-        const secs = ((performance.now() - t0) / 1000).toFixed(1);
-        let h = `<div class="bubble">${esc(ev.text)}</div>`;
-        if (ev.meme) h += `<img class="meme" src="${ev.meme.url}" alt="${esc(ev.meme.alt)}">`;
-        h += `<div class="tag">${esc(model)} · ${secs}s</div>`;
-        row('', h); history.push({role: 'assistant', content: ev.text}); lastMeme = !!ev.meme;
-      }
-      else if (ev.type === 'draft' || ev.type === 'repair') { if (ev.check.flagged) art.rounds.push(ev.check.flagged); art.ours = ev; if (view === 'ours') render() }
-      else if (ev.type === 'final') {
-        art.ours = ev; render();
-        const title = ev.text.trim().split('\n')[0].replace(/^#+\s*/, '');
-        const card = row('', `<div class="card"><b>${esc(title)}</b><span>${ev.text.length} 字 · 像機器的用詞 ${ev.check.flagged} 處 · 點一下打開</span></div><div class="tag">${esc(model)} · ${((performance.now() - t0) / 1000).toFixed(0)}s</div>`);
-        card.querySelector('.card').onclick = () => { $('#art').classList.add('open'); view = 'ours'; render() };
-        history.push({role: 'assistant', content: '（文章寫好了：' + title + '）'});
-      }
-      else if (ev.type === 'baseline') { art.base = ev; if (view === 'base') render() }
-      else if (ev.type === 'error') { wait.remove(); row('', `<div class="bubble">出錯了：${esc(ev.text)}</div>`) }
-    }
+/* ---------- sidebar ---------- */
+function renderSide(){
+  $('#convs').innerHTML = convs.map(c => `<button class="conv ${c.id === cur ? 'on' : ''}" data-id="${c.id}">${esc(c.title)}</button>`).join('');
+  document.querySelectorAll('.conv').forEach(b => b.onclick = () => open(b.dataset.id));
+  $('#title').textContent = conv()?.title || '新對話';
+}
+function open(id){ if (busy) return; cur = id; closeArt(); renderSide(); renderMsgs(); input.focus() }
+function fresh(){ if (busy) return; cur = null; closeArt(); renderSide(); renderMsgs(); input.focus() }
+$('#new').onclick = fresh;
+$('#toggle').onclick = () => document.body.classList.toggle('noside');
+$('#theme').onclick = () => { const r = document.documentElement, dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme:dark)').matches; r.dataset.theme = dark ? 'light' : 'dark'; store.set('ww.theme', r.dataset.theme) };
+if (store.get('ww.theme')) document.documentElement.dataset.theme = store.get('ww.theme');
+if (innerWidth < 900) document.body.classList.add('noside');
+
+/* ---------- messages ---------- */
+function renderMsgs(){
+  const c = conv();
+  msgsEl.innerHTML = '';
+  if (!c || !c.msgs.length) {
+    msgsEl.innerHTML = `<div id="empty"><div class="logo">寫</div><h2>嗨，我是小寫</h2><div class="sugs">${SUGS.map(t => `<button class="sug">${esc(t)}</button>`).join('')}</div></div>`;
+    msgsEl.querySelectorAll('.sug').forEach((b, i) => b.onclick = () => send(SUGS[i]));
+    return;
   }
-  if (!said) wait.remove();
-  $('#send').disabled = false; $('#in').focus();
+  c.msgs.forEach((m, i) => msgsEl.appendChild(m.role === 'user' ? userNode(m) : aiNode(m, i === c.msgs.length - 1)));
+  toBottom(true);
 }
-document.querySelectorAll('.chip').forEach(b => b.onclick = () => { if (!$('#send').disabled) send(b.textContent) });
-$('#f').onsubmit = e => { e.preventDefault(); const v = $('#in').value.trim(); if (!v || $('#send').disabled) return; $('#in').value = ''; send(v) };
+function userNode(m){ const d = document.createElement('div'); d.className = 'msg me'; d.innerHTML = `<div class="text">${esc(m.text)}</div>`; return d }
+function aiNode(m, last){
+  const d = document.createElement('div'); d.className = 'msg ai';
+  d.innerHTML = `<div class="av">寫</div><div class="body"><div class="think" hidden></div><div class="text"></div><div class="steps"></div><div class="extra"></div><div class="meta"></div></div>`;
+  d.querySelector('.text').textContent = m.text || '';
+  paintSteps(d, m); paintExtra(d, m); paintMeta(d, m, last);
+  return d;
+}
+function paintSteps(d, m){ d.querySelector('.steps').innerHTML = (m.steps || []).map(s => `<span class="step ${s.state === 'ok' ? 'ok' : 'run'}">${s.state === 'ok' ? I.ok : I.run}${esc(s.label)}</span>`).join('') }
+function paintExtra(d, m){
+  const x = d.querySelector('.extra'); x.innerHTML = '';
+  if (m.meme) { const im = new Image(); im.className = 'meme'; im.src = m.meme.url; im.alt = m.meme.alt || ''; im.onload = () => toBottom(); x.appendChild(im) }
+  const a = m.art && conv()?.arts?.[m.art];
+  if (a && a.final) {
+    const b = document.createElement('button'); b.className = 'card';
+    const n = a.final.check.flagged + (a.final.check.flow || 0);
+    b.innerHTML = `<span class="doc">${I.doc}</span><div><b>${esc(a.title)}</b><span>${a.final.text.replace(/\s/g, '').length} 字 · 像機器的地方 ${n} 處</span></div>`;
+    b.onclick = () => openArt(m.art); x.appendChild(b);
+  }
+}
+function paintMeta(d, m, last){
+  const el = d.querySelector('.meta');
+  if (m.pending) { el.innerHTML = ''; return }
+  el.innerHTML = (m.model ? `<span class="chip">${esc(m.model)}</span>` : '') + (m.secs ? `<span>${m.secs}s</span>` : '') +
+    `<button class="ic" data-a="copy" aria-label="複製">${I.copy}</button>` + (last ? `<button class="ic" data-a="redo" aria-label="重新產生">${I.redo}</button>` : '');
+  el.querySelector('[data-a=copy]').onclick = e => copy(m.text, e.currentTarget);
+  const r = el.querySelector('[data-a=redo]'); if (r) r.onclick = redo;
+}
+function copy(text, btn){ navigator.clipboard?.writeText(text).then(() => { const old = btn.innerHTML; btn.innerHTML = I.ok; setTimeout(() => btn.innerHTML = old, 1200) }) }
+let pinned = true;
+log.addEventListener('scroll', () => { pinned = log.scrollHeight - log.scrollTop - log.clientHeight < 80; $('#down').classList.toggle('show', !pinned) });
+function toBottom(force){ if (force || pinned) log.scrollTop = log.scrollHeight }
+$('#down').onclick = () => { pinned = true; toBottom(true) };
+
+/* ---------- writing panel ---------- */
+function versions(a){ return [...(a.rounds || []), ...(a.final ? [a.final] : [])] }
+function verLabel(v){ return v.type === 'draft' ? '草稿' : v.type === 'final' ? '定稿' : `第 ${v.round} 輪` }
+function openArt(id){ view = {art: id, tab: 'ours', ver: -1}; $('#art').classList.add('open'); renderArt(true) }
+function closeArt(){ $('#art').classList.remove('open'); view.art = null }
+$('#aclose').onclick = closeArt;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeArt() });
+document.querySelectorAll('.seg button').forEach(b => b.onclick = () => { view.tab = b.dataset.v; renderArt(true) });
+$('#acopy').onclick = e => { const v = shown(); if (v) copy(v.text, e.currentTarget) };
+function shown(){
+  const a = conv()?.arts?.[view.art]; if (!a) return null;
+  if (view.tab === 'base') return a.base || null;
+  const vs = versions(a); return vs.length ? vs[view.ver < 0 ? vs.length - 1 : Math.min(view.ver, vs.length - 1)] : null;
+}
+function docHtml(v){
+  const raw = (v.marked || v.text).trim().replace(/^#+\s*/gm, '').replace(/\*\*/g, '');
+  const html = esc(raw).replace(/【/g, '<mark>').replace(/】/g, '</mark>').replace(/〔/g, '<u>').replace(/〕/g, '</u>');
+  const [head, ...rest] = html.split(/\n+/);
+  return `<h2>${head}</h2>` + rest.map((p, i) => `<p style="animation-delay:${Math.min(i * 70, 700)}ms">${p}</p>`).join('');
+}
+function renderArt(animate){
+  const a = conv()?.arts?.[view.art]; if (!a) return;
+  document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.v === view.tab));
+  $('#atitle').textContent = a.title || '文章';
+  const vs = versions(a), v = shown(), at = view.ver < 0 ? vs.length - 1 : view.ver;
+  $('#vers').innerHTML = view.tab === 'ours' && vs.length > 1 ? vs.map((x, i) => `<button class="ver ${i === at ? 'on' : ''}" data-i="${i}">${verLabel(x)}</button>`).join('') : '';
+  document.querySelectorAll('.ver').forEach(b => b.onclick = () => { view.ver = +b.dataset.i; renderArt(true) });
+  if (!v) { $('#meter').innerHTML = ''; $('#doc').innerHTML = '<div class="wait"><i></i><i></i><i></i></div>'; return }
+  const c = v.check, n = c.flagged, f = c.shape.machine_like_sentences ?? 0;
+  $('#meter').innerHTML =
+    `<div class="stat ${n ? 'bad' : 'good'}"><b>${n}</b>像機器的用詞</div>` +
+    `<div class="stat ${c.flow ? 'bad' : 'good'}"><b>${f}</b>機器句型</div>` +
+    (c.shape.len_sd != null ? `<div class="stat"><b>${c.shape.len_sd}</b>句長起伏</div>` : '') +
+    (n ? `<div class="words">${c.hits.slice(0, 9).map(h => esc(h.gram)).join('、')}</div>` : '');
+  const d = $('#doc'); d.innerHTML = docHtml(v); if (!animate) d.querySelectorAll('p').forEach(p => p.style.animation = 'none'); d.scrollTop = 0;
+}
+
+/* ---------- one turn ---------- */
+function setBusy(ctl){ busy = ctl; const b = $('#send'); b.innerHTML = ctl ? I.stop : I.up; b.setAttribute('aria-label', ctl ? '停止' : '送出'); b.disabled = !ctl && !input.value.trim() }
+async function send(text, isRedo){
+  if (busy) return;
+  let c = conv();
+  if (!c) { c = {id: Date.now().toString(36), title: text.slice(0, 22), msgs: [], arts: {}}; convs.unshift(c); cur = c.id }
+  if (!isRedo) c.msgs.push({role: 'user', text});
+  const m = {role: 'assistant', text: '', steps: [], pending: true};
+  c.msgs.push(m); renderSide(); renderMsgs();
+  const node = msgsEl.lastChild, think = node.querySelector('.think'), textEl = node.querySelector('.text');
+  think.hidden = false; think.textContent = '想一下…'; pinned = true; toBottom(true);
+  const ctl = new AbortController(); setBusy(ctl);
+  const t0 = performance.now(); let target = '', raf = 0, art = null;
+  const typer = () => { if (textEl.textContent.length < target.length) { textEl.textContent = target.slice(0, textEl.textContent.length + 2); toBottom(); raf = requestAnimationFrame(typer) } else raf = 0 };
+  const history = c.msgs.filter(x => !x.pending).map(x => ({role: x.role, content: x.text}));
+  try {
+    const res = await fetch('/api/chat', {method: 'POST', signal: ctl.signal, headers: {'Content-Type': 'application/json'}, body: JSON.stringify({messages: history})});
+    const rd = res.body.getReader(), dec = new TextDecoder(); let buf = '';
+    for (;;) {
+      const {done, value} = await rd.read(); if (done) break;
+      buf += dec.decode(value, {stream: true});
+      let i; while ((i = buf.indexOf('\n\n')) >= 0) {
+        const ev = JSON.parse(buf.slice(5, i)); buf = buf.slice(i + 2);
+        if (ev.type === 'thinking') think.textContent = ev.label + '…';
+        else if (ev.type === 'route') think.textContent = (ev.to === 'write' ? '交給寫作模型' : '交給對話模型') + '…';
+        else if (ev.type === 'delta') { think.hidden = true; textEl.classList.add('caret'); target += ev.text; if (!raf) raf = requestAnimationFrame(typer) }
+        else if (ev.type === 'message_end') { m.text = target; m.meme = ev.meme; m.model = '對話模型'; m.secs = ((performance.now() - t0) / 1000).toFixed(1); const fin = () => { if (raf) return setTimeout(fin, 40); textEl.classList.remove('caret'); paintExtra(node, m); toBottom() }; fin() }
+        else if (ev.type === 'artifact_open') { art = 'a' + Date.now().toString(36); c.arts[art] = {title: '文章', rounds: []}; m.art = art; openArt(art) }
+        else if (ev.type === 'step') { const s = m.steps.find(x => x.id === ev.id); if (s) Object.assign(s, ev); else m.steps.push(ev); paintSteps(node, m); toBottom() }
+        else if (ev.type === 'draft' || ev.type === 'repair') { const a = c.arts[art]; a.rounds.push(ev); a.title = ev.text.trim().split('\n')[0].replace(/^#+\s*/, '').slice(0, 40); if (view.art === art && view.tab === 'ours') { view.ver = -1; renderArt(ev.type === 'draft') } }
+        else if (ev.type === 'final') { const a = c.arts[art]; a.final = ev; m.steps.push({id: 'done', label: '定稿', state: 'ok'}); paintSteps(node, m); m.model = '對話模型 → 寫作模型'; m.secs = ((performance.now() - t0) / 1000).toFixed(0); paintExtra(node, m); if (view.art === art && view.tab === 'ours') { view.ver = -1; renderArt(false) } toBottom() }
+        else if (ev.type === 'baseline') { const a = c.arts[art]; if (a) { a.base = ev; if (view.art === art && view.tab === 'base') renderArt(true) } }
+        else if (ev.type === 'error') { think.hidden = true; m.text = target = '出了點狀況：' + ev.text; textEl.textContent = target }
+      }
+    }
+  } catch (e) { if (e.name !== 'AbortError') { m.text = target = '連不上伺服器。'; textEl.textContent = target } else m.text = target }
+  if (raf) cancelAnimationFrame(raf);
+  think.hidden = true; textEl.classList.remove('caret'); textEl.textContent = target; m.pending = false;
+  if (!node.querySelector('.extra').children.length) paintExtra(node, m);
+  paintMeta(node, m, true); save(); setBusy(null); input.focus();
+}
+function redo(){ const c = conv(); if (!c || busy) return; c.msgs.pop(); const u = c.msgs[c.msgs.length - 1]; send(u.text, true) }
+
+/* ---------- composer ---------- */
+const grow = () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 176) + 'px'; if (!busy) $('#send').disabled = !input.value.trim() };
+input.addEventListener('input', grow);
+input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); $('#f').requestSubmit() } });
+$('#f').onsubmit = e => { e.preventDefault(); if (busy) return busy.abort(); const v = input.value.trim(); if (!v) return; input.value = ''; grow(); send(v) };
+renderSide(); renderMsgs(); setBusy(null); input.focus();
+if (new URLSearchParams(location.search).has('play')) (async () => {
+  const lines = await (await fetch('/api/script')).json(), nap = ms => new Promise(r => setTimeout(r, ms));
+  cur = null; renderSide(); renderMsgs(); await nap(1200);
+  for (const line of lines) {
+    for (const ch of line) { input.value += ch; grow(); await nap(55) }
+    await nap(350); input.value = ''; grow(); await send(line); await nap(1500);
+  }
+})();
 </script>
 </body>
 </html>
