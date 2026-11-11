@@ -29,6 +29,13 @@
    "spread": 0.51,
    "raw_model_per1k": 0.183
   },
+  "留言 分享": {
+   "n": 2,
+   "df_machine": 10.0,
+   "df_human": 0.0,
+   "ratio": 100.0,
+   "source": "raw_model"
+  },
   "常見問題": {
    "n": 1,
    "df_machine": 20.0,
@@ -62,6 +69,13 @@
    "h_per1k": 0.0,
    "spread": 0.89,
    "raw_model_per1k": 0.0
+  },
+  "前 建議": {
+   "n": 2,
+   "df_machine": 8.7,
+   "df_human": 0.1,
+   "ratio": 86.7,
+   "source": "raw_model"
   },
   "再 決定": {
    "n": 2,
@@ -260,6 +274,13 @@
    "ratio": 27.1,
    "source": "raw_model"
   },
+  "聽聽": {
+   "n": 1,
+   "df_machine": 12.7,
+   "df_human": 0.5,
+   "ratio": 26.8,
+   "source": "raw_model"
+  },
   "建議 先": {
    "n": 2,
    "df_machine": 11.3,
@@ -283,6 +304,13 @@
    "spread": 0.3,
    "raw_model_per1k": 0.045
   },
+  "結語": {
+   "n": 1,
+   "df_machine": 9.3,
+   "df_human": 0.4,
+   "ratio": 23.7,
+   "source": "raw_model"
+  },
   "也 歡迎": {
    "n": 2,
    "df_machine": 16.7,
@@ -304,6 +332,13 @@
    "df_machine": 13.3,
    "df_human": 0.6,
    "ratio": 22.1,
+   "source": "raw_model"
+  },
+  "備註": {
+   "n": 1,
+   "df_machine": 8.7,
+   "df_human": 0.4,
+   "ratio": 22.0,
    "source": "raw_model"
   },
   "請 以": {
@@ -408,6 +443,13 @@
    "spread": 0.4,
    "raw_model_per1k": 0.067
   },
+  "如果 你 也": {
+   "n": 3,
+   "df_machine": 13.3,
+   "df_human": 0.8,
+   "ratio": 16.9,
+   "source": "raw_model"
+  },
   "可 參考": {
    "n": 2,
    "df_machine": 11.8,
@@ -453,6 +495,13 @@
    "spread": 0.67,
    "raw_model_per1k": 0.118
   },
+  "在 下面": {
+   "n": 2,
+   "df_machine": 8.7,
+   "df_human": 0.6,
+   "ratio": 15.0,
+   "source": "raw_model"
+  },
   "取決於": {
    "n": 1,
    "df_machine": 14.7,
@@ -477,6 +526,13 @@
    "h_per1k": 0.02,
    "spread": 0.66,
    "raw_model_per1k": 0.183
+  },
+  "六 、": {
+   "n": 2,
+   "df_machine": 11.3,
+   "df_human": 0.8,
+   "ratio": 14.4,
+   "source": "raw_model"
   },
   "也 應": {
    "n": 2,
@@ -541,6 +597,20 @@
    "spread": 0.49,
    "raw_model_per1k": 0.039
   },
+  "可以 幫": {
+   "n": 2,
+   "df_machine": 9.3,
+   "df_human": 0.7,
+   "ratio": 12.7,
+   "source": "raw_model"
+  },
+  "回頭 看": {
+   "n": 2,
+   "df_machine": 8.7,
+   "df_human": 0.7,
+   "ratio": 12.7,
+   "source": "raw_model"
+  },
   "加 分": {
    "n": 2,
    "df_machine": 11.3,
@@ -574,6 +644,13 @@
    "h_per1k": 0.02,
    "spread": 0.36,
    "raw_model_per1k": 0.029
+  },
+  "板 友": {
+   "n": 2,
+   "df_machine": 11.3,
+   "df_human": 0.9,
+   "ratio": 12.3,
+   "source": "raw_model"
   },
   "判斷": {
    "n": 1,
@@ -706,6 +783,13 @@
    "h_per1k": 0.02,
    "spread": 0.4,
    "raw_model_per1k": 0.048
+  },
+  "大家 一起": {
+   "n": 2,
+   "df_machine": 8.7,
+   "df_human": 0.8,
+   "ratio": 10.6,
+   "source": "raw_model"
   },
   "查證": {
    "n": 1,
@@ -921,6 +1005,13 @@
    "spread": 0.85,
    "raw_model_per1k": 0.077
   },
+  "： 如果": {
+   "n": 2,
+   "df_machine": 8.7,
+   "df_human": 1.2,
+   "ratio": 7.2,
+   "source": "raw_model"
+  },
   "可能 需要": {
    "n": 2,
    "df_machine": 8.7,
@@ -929,6 +1020,13 @@
    "h_per1k": 0.01,
    "spread": 0.67,
    "raw_model_per1k": 0.029
+  },
+  "有 幾個": {
+   "n": 2,
+   "df_machine": 8.7,
+   "df_human": 1.2,
+   "ratio": 7.0,
+   "source": "raw_model"
   },
   "依據": {
    "n": 1,
@@ -957,6 +1055,13 @@
    "spread": 0.54,
    "raw_model_per1k": 0.073
   },
+  "， 這點": {
+   "n": 2,
+   "df_machine": 11.3,
+   "df_human": 1.7,
+   "ratio": 6.7,
+   "source": "raw_model"
+  },
   "會 隨": {
    "n": 2,
    "df_machine": 8.0,
@@ -965,6 +1070,13 @@
    "h_per1k": 0.01,
    "spread": 0.45,
    "raw_model_per1k": 0.058
+  },
+  "安靜": {
+   "n": 1,
+   "df_machine": 11.3,
+   "df_human": 1.7,
+   "ratio": 6.5,
+   "source": "raw_model"
   },
   "， 並非": {
    "n": 2,
@@ -975,6 +1087,20 @@
    "spread": 0.4,
    "raw_model_per1k": 0.039
   },
+  "語氣": {
+   "n": 1,
+   "df_machine": 9.3,
+   "df_human": 1.5,
+   "ratio": 6.3,
+   "source": "raw_model"
+  },
+  "節奏": {
+   "n": 1,
+   "df_machine": 12.0,
+   "df_human": 1.9,
+   "ratio": 6.3,
+   "source": "raw_model"
+  },
   "憑": {
    "n": 1,
    "df_machine": 11.9,
@@ -983,6 +1109,13 @@
    "h_per1k": 0.02,
    "spread": 0.35,
    "raw_model_per1k": 0.036
+  },
+  "溫柔": {
+   "n": 1,
+   "df_machine": 8.7,
+   "df_human": 1.4,
+   "ratio": 6.2,
+   "source": "raw_model"
   },
   "， 而 非": {
    "n": 3,

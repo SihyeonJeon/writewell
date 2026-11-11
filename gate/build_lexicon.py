@@ -133,7 +133,7 @@ def main():
         if any(t in ("９", "Ａ") for t in toks) or all(t in PUNCT for t in toks):
             continue
         a, h = 100 * c / len(R), 100 * dh.get(g, 0) / len(Hm)
-        if a >= 10 and h < 2 and a / max(h, 0.1) >= 8 and all(100 * bm.get(g, 0) / n >= 6 for bm, n in zip(by_model, sizes)):
+        if a >= 8.5 and h < 2 and a / max(h, 0.1) >= 6 and all(100 * bm.get(g, 0) / n >= 4 for bm, n in zip(by_model, sizes)):
             raw_ban[g] = {"n": len(toks), "df_machine": round(a, 1), "df_human": round(h, 1), "ratio": round(a / max(h, 0.1), 1),
                           "source": "raw_model"}
     raw_ban = {g: c for g, c in raw_ban.items()
