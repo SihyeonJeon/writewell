@@ -1,10 +1,17 @@
-# writewell
+# writewell (Taiwan edition)
 
-An agent that talks like a person and writes like one, in Traditional Chinese (Taiwan) first.
+General-purpose models write Chinese as one language. For Taiwan that means Simplified characters slipping in,
+mainland vocabulary, and prose that reads like a translated report. writewell is our attempt at an LLM system that
+writes the Mandarin people in Taiwan use, and writes it without sounding like AI.
 
-- **Chat** goes to a small fine-tuned model (Gemma, trained on pre-LLM community text).
-- **Writing** goes to a large model whose output is held to a measured style gate, then shown in its own panel.
-- Routing is a plain rule today (`agent/chat.py`); `route/jev.py` holds the decision-model version.
+- **Chat** goes to a Gemma model we fine-tuned only on text written in Taiwan: real exchanges from Taiwanese
+  community threads. The base model answered small talk as a counseling report and once in Simplified Chinese;
+  the fine-tuned one answers in Traditional Chinese, the way a friend leaves a comment.
+- **Writing** goes to a frontier model whose output is held to a style gate. The gate is measured against 6,655 texts
+  Taiwanese people wrote before LLMs existed: phrases only machines overuse are banned, sentences built like a
+  machine's are flagged, and the flagged sentences go back to the model for another turn.
+- **Routing** between the two is a plain rule today (`agent/chat.py`); `route/jev.py` holds the decision-model version.
+- **Memes** from Taiwanese social accounts come out when the moment fits (`agent/skills/memes.py`).
 
 ## The style gate is measured, not hand-written
 
