@@ -331,6 +331,16 @@ if (new URLSearchParams(location.search).has('play')) (async () => {
     for (const ch of line) { input.value += ch; grow(); await nap(55) }
     await nap(350); input.value = ''; grow(); await send(line); await nap(1500);
   }
+  // read-through for the recording: the finished piece top to bottom, then the uncontrolled version with its marks
+  const glide = (el, ms) => new Promise(done => { const from = el.scrollTop, to = el.scrollHeight - el.clientHeight, t0 = performance.now();
+    const step = t => { const k = Math.min((t - t0) / ms, 1); el.scrollTop = from + (to - from) * k; k < 1 ? requestAnimationFrame(step) : done() }; requestAnimationFrame(step) });
+  const doc = $('#doc'), tab = v => document.querySelector(`.seg button[data-v=${v}]`).click();
+  if ($('#art').classList.contains('open')) {
+    await nap(800); await glide(doc, 7000); await nap(600);
+    tab('base'); await nap(900); await glide(doc, 5000); await nap(600);
+    tab('ours'); await nap(400);
+    const vs = document.querySelectorAll('.ver'); if (vs.length) { vs[0].click(); await nap(1800); vs[vs.length - 1].click() }
+  }
 })();
 </script>
 </body>
