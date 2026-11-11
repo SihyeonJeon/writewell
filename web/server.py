@@ -84,7 +84,7 @@ class Handler(BaseHTTPRequestHandler):
         def baseline():
             text = llm.claude(PLAIN_SYSTEM, [{"role": "user", "content": user}], llm.WRITE_MODEL)
             r = check(text)
-            return {"type": "baseline", "text": text, "marked": mark(text, r["hits"]),
+            return {"type": "baseline", "text": text, "marked": mark(text, r["hits"], r["flow"]),
                     "check": writer._public(r)}
 
         threads = [threading.Thread(target=side, args=(f,), daemon=True) for f in (ack, baseline)]

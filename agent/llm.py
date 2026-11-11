@@ -39,8 +39,11 @@ def claude(system: str, messages: list[dict], model: str, max_tokens=4000) -> st
         d = json.loads(r.stdout)
         if d.get("is_error"):
             raise RuntimeError(str(d.get("result"))[:300])
-        if not _JUNK.search(d["result"][:400]):
-            return _LEAD.sub("", d["result"])
+        out, head = d["result"], d["result"][:400]
+        cjk_prompt = bool(re.search(r"[\u4e00-\u9fff]", convo))
+        cjk_share = len(re.findall(r"[\u4e00-\u9fff]", head)) / max(len(head), 1)
+        if not _JUNK.search(head) and not (cjk_prompt and cjk_share < 0.3):
+            return _LEAD.sub("", out)
     raise RuntimeError("CLI kept returning scaffolding text instead of an answer")
 
 

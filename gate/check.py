@@ -18,6 +18,7 @@ _T2S = OpenCC("t2s")
 _LAT, _NUM = "Ａ", "９"
 _PUNCT = "，。！？；：、「」『』（）《》…—"
 _KEEP = re.compile(rf"[^一-鿿㐀-䶿{_LAT}{_NUM}{_PUNCT}]")
+FLOW_SHARE_MAX = 0.08      # held-out human text has 3% of sentences above the threshold
 _H2F = str.maketrans({",": "，", "!": "！", "?": "？", ";": "；", ":": "：", "(": "（", ")": "）"})
 
 
@@ -80,17 +81,26 @@ def check(text: str, lang="zh-Hant") -> dict:
         sh["question_per1k"] = round(1000 * len(re.findall(r"[？?]", text)) / max(len(text), 1), 2)
         sh["flat"] = sh["len_sd"] < shape["sentence_len_sd_min"]
         sh["too_many_questions"] = sh["question_per1k"] > shape["question_per1k_chars_max"]
-    ok = not hits and not sh.get("flat") and not sh.get("too_many_questions")
-    return {"ok": ok, "hits": hits, "shape": sh, "sentences": sents, "tokens": total}
+    from . import lm                               # word-combination probability; absent model -> no flags
+    scored = lm.sentence_scores(text)
+    flow = [i for i, _v, flagged in scored if flagged]
+    allowed_flow = math.floor(FLOW_SHARE_MAX * len(scored))
+    sh["machine_like_sentences"] = len(flow)
+    ok = not hits and not sh.get("flat") and not sh.get("too_many_questions") and len(flow) <= allowed_flow
+    return {"ok": ok, "hits": hits, "flow": flow if len(flow) > allowed_flow else [], "shape": sh,
+            "sentences": sents, "tokens": total}
 
 
 def surface(gram: str) -> str:
     return gram.replace(" ", "")
 
 
-def mark(text: str, hits: list[dict], open_="【", close="】") -> str:
-    """Bracket every flagged span in its sentence (used for the repair request and for the UI)."""
+def mark(text: str, hits: list[dict], flow=(), open_="【", close="】") -> str:
+    """Bracket every flagged span in its sentence; wrap whole machine-like sentences in 〔〕."""
     sents = split(text)
+    for si in flow:
+        if "〔" not in sents[si]:
+            text = text.replace(sents[si], "〔" + sents[si] + "〕", 1)
     flagged = {}
     for h in hits:
         for si in h["sentences"]:

@@ -22,9 +22,11 @@ SYSTEM = """你在台灣寫了很多年的專欄跟部落格，讀者是台灣�
 
 REPAIR = """下面這篇文章有些地方讀起來像機器寫的，我用【】把那些字詞框起來了。
 
-把含有【】的句子整句重寫，換個講法，意思留著。【】裡的字詞在全文都別再出現，也別換成意思相近的公文腔。沒有【】的句子一個字都別動。{shape}
+把含有【】的句子整句重寫，換個講法，意思留著。【】裡的字詞在全文都別再出現，也別換成意思相近的公文腔。
+用〔〕框起來的是整句的搭法像機器：把那一句拆開重講，換掉句子的骨架，像跟朋友講這件事那樣寫。
+沒有被框到的句子一個字都別動。{shape}
 
-只輸出改好的全文，裡面沒有【】。
+只輸出改好的全文，裡面沒有【】跟〔〕。
 
 ---
 {text}"""
@@ -41,22 +43,26 @@ def run(request: str):
     """Yields events: draft -> (repair)* -> final. Each carries the text and its gate result."""
     text = llm.write(SYSTEM, [{"role": "user", "content": request}])
     result = check(text)
-    yield {"type": "draft", "round": 0, "text": text, "marked": mark(text, result["hits"]), "check": _public(result)}
-    best, best_n = (text, result), len(result["hits"])
+    yield {"type": "draft", "round": 0, "text": text, "marked": mark(text, result["hits"], result["flow"]), "check": _public(result)}
+    best, best_n = (text, result), _cost(result)
     for rnd in range(1, MAX_ROUNDS + 1):
         if result["ok"]:
             break
-        prompt = REPAIR.format(shape=_shape_note(result["shape"]), text=mark(text, result["hits"]))
-        text = llm.write(SYSTEM, [{"role": "user", "content": prompt}]).replace("【", "").replace("】", "")
+        prompt = REPAIR.format(shape=_shape_note(result["shape"]), text=mark(text, result["hits"], result["flow"]))
+        text = llm.write(SYSTEM, [{"role": "user", "content": prompt}]).replace("【", "").replace("】", "").replace("〔", "").replace("〕", "")
         result = check(text)
-        if len(result["hits"]) <= best_n:
-            best, best_n = (text, result), len(result["hits"])
-        yield {"type": "repair", "round": rnd, "text": text, "marked": mark(text, result["hits"]), "check": _public(result)}
+        if _cost(result) <= best_n:
+            best, best_n = (text, result), _cost(result)
+        yield {"type": "repair", "round": rnd, "text": text, "marked": mark(text, result["hits"], result["flow"]), "check": _public(result)}
     text, result = best
     yield {"type": "final", "text": text, "check": _public(result)}
+
+
+def _cost(r):
+    return len(r["hits"]) + len(r["flow"])
 
 
 def _public(r):
     return {"ok": r["ok"], "hits": [{"gram": h["gram"].replace(" ", ""), "kind": h["kind"], "count": h["count"],
                                      "allowed": h["allowed"]} for h in r["hits"]],
-            "flagged": sum(h["count"] - h["allowed"] for h in r["hits"]), "shape": r["shape"], "tokens": r["tokens"]}
+            "flagged": sum(h["count"] - h["allowed"] for h in r["hits"]), "flow": len(r["flow"]), "shape": r["shape"], "tokens": r["tokens"]}

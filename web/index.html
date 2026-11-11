@@ -44,14 +44,30 @@ button:disabled{opacity:.4}
 #meter .bad b{color:var(--accent)}#meter .good b{color:var(--ok)}
 #doc{flex:1;overflow-y:auto;padding:28px 36px 60px;white-space:pre-wrap;font-family:"Noto Serif TC","Songti TC",serif;font-size:17px;line-height:1.95}
 #doc h1{font-size:24px;line-height:1.4;margin:0 0 18px;font-weight:700}
+#empty{padding:18vh 0 0;text-align:center}
+#empty h2{font-size:26px;margin:0 0 8px;font-weight:700}
+#empty p{color:var(--mute);margin:0 0 22px}
+.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.chip{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:18px;padding:7px 14px;font-size:14.5px}
 mark{background:var(--flag);color:inherit;border-radius:3px;padding:0 2px}
+u{text-decoration:underline wavy var(--accent);text-underline-offset:5px;text-decoration-thickness:1px}
 @media (max-width:820px){body{flex-direction:column}#art.open{flex-basis:60%;width:100%;border-left:0;border-top:1px solid var(--line)}}
 </style>
 </head>
 <body>
 <section id="chat">
   <header><b>小寫</b><span>聊天 · 寫東西</span></header>
-  <div id="log"><div class="wrap" id="msgs"></div></div>
+  <div id="log"><div class="wrap" id="msgs">
+    <div id="empty">
+      <h2>嗨，我是小寫</h2>
+      <p>想聊什麼都可以。要寫東西的時候跟我說一聲，文章會開在右邊。</p>
+      <div class="chips">
+        <button type="button" class="chip">今天加班到九點，好累喔</button>
+        <button type="button" class="chip">週末去哪裡走走好</button>
+        <button type="button" class="chip">幫我寫一篇關於台北雨天的短文</button>
+      </div>
+    </div>
+  </div></div>
   <form id="f"><div class="box"><input id="in" autocomplete="off" placeholder="說點什麼，或是叫我寫一篇…" autofocus><button id="send">送出</button></div></form>
 </section>
 <aside id="art">
@@ -70,7 +86,7 @@ let history = [], lastMeme = false, view = 'ours', art = {ours: null, base: null
 function esc(s){return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
 function row(cls, html){const d = document.createElement('div'); d.className = 'row ' + cls; d.innerHTML = html; msgs.appendChild(d); log.scrollTop = log.scrollHeight; return d}
 function docHtml(text){
-  const t = esc(text.trim()).replace(/【/g, '<mark>').replace(/】/g, '</mark>');
+  const t = esc(text.trim()).replace(/【/g, '<mark>').replace(/】/g, '</mark>').replace(/〔/g, '<u>').replace(/〕/g, '</u>');
   const i = t.indexOf('\n');
   const title = (i < 0 ? t : t.slice(0, i)).replace(/^#+\s*/, '').replace(/\*\*/g, '');
   return '<h1>' + title + '</h1>' + (i < 0 ? '' : t.slice(i + 1).replace(/^\n+/, ''));
@@ -81,6 +97,7 @@ function render(){
   if (!a){ m.innerHTML = ''; d.innerHTML = '<div class="dots"><span></span><span></span><span></span></div>'; return }
   const c = a.check, bad = c.flagged > 0;
   let h = `<span class="${bad ? 'bad' : 'good'}">像機器的用詞 <b>${c.flagged}</b> 處</span>`;
+  if (c.shape.machine_like_sentences != null) h += `<span class="${c.flow ? 'bad' : 'good'}">機器句型 <b>${c.shape.machine_like_sentences}</b> 句</span>`;
   if (c.shape.len_sd != null) h += `<span>句長起伏 <b>${c.shape.len_sd}</b></span>`;
   if (view === 'ours') h += `<span>改寫 <b>${art.rounds.length}</b> 輪${art.rounds.length ? '（' + art.rounds.join(' → ') + ' → ' + c.flagged + '）' : ''}</span>`;
   if (bad) h += `<span>${c.hits.slice(0, 8).map(x => esc(x.gram)).join('、')}</span>`;
@@ -91,6 +108,7 @@ document.querySelectorAll('.tab').forEach(b => b.onclick = () => { view = b.data
 $('#close').onclick = () => $('#art').classList.remove('open');
 
 async function send(text){
+  const em = $('#empty'); if (em) em.remove();
   history.push({role: 'user', content: text});
   row('me', `<div class="bubble">${esc(text)}</div>`);
   const wait = row('', '<div class="bubble dots"><span></span><span></span><span></span></div>');
@@ -129,6 +147,7 @@ async function send(text){
   if (!said) wait.remove();
   $('#send').disabled = false; $('#in').focus();
 }
+document.querySelectorAll('.chip').forEach(b => b.onclick = () => { if (!$('#send').disabled) send(b.textContent) });
 $('#f').onsubmit = e => { e.preventDefault(); const v = $('#in').value.trim(); if (!v || $('#send').disabled) return; $('#in').value = ''; send(v) };
 </script>
 </body>
