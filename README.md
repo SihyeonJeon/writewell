@@ -51,6 +51,14 @@ Copy `.env.example` to `.env` and fill in what you have:
 - The fine-tuned model was trained on single exchanges, so it answers the current message alone (`agent/context.py`);
   conversation memory is kept by the agent and handed to the writer.
 
+## Chat model weights
+
+The fine-tuned adapter (LoRA for `unsloth/gemma-4-12B-it`, checkpoint 2100, eval loss 3.22) is attached to the
+[`gemma-adapter-v0.1` release](https://github.com/SihyeonJeon/writewell/releases/tag/gemma-adapter-v0.1)
+as `writewell-gemma-4-12b-adapter.zip`. Load it on top of the base model (`train/infer_demo.py` shows how, `CKPT=<unzipped dir>`),
+serve it behind any OpenAI-compatible server, and set `CHAT_BASE_URL` / `CHAT_MODEL` in `.env`: the agent then talks to it live.
+The base model is under Google's Gemma terms of use.
+
 ## Reaction memes
 
 `agent/skills/memes.py` answers with a meme when one fits and with none when nothing does. The library
