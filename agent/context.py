@@ -12,7 +12,8 @@ import os
 from . import memory
 from .skills import memes
 
-WINDOW = 8          # turns of conversation the chat model sees
+WINDOW = 8          # turns of conversation an instructed chat model sees
+FINETUNED_WINDOW = int(os.environ.get("FINETUNED_WINDOW", "1"))
 
 PERSONA = """你叫小寫，是住在台北的朋友，跟對方用 LINE 聊天的那種口氣。
 一次只講一兩句，像真人打字：會用「啦」「喔」「欸」「吧」「齁」，會用「真的」「超」「蠻」，偶爾「XD」或「～」。
@@ -34,7 +35,9 @@ def chat(history: list[dict], card=None, style=None):
     while window and window[0]["role"] != "user":          # a window always opens on the user's turn
         window = window[1:]
     if (style or chat_style()) == "finetuned":
-        return None, window
+        # Measured on checkpoint-2100: with earlier turns in the window the model repeats its previous reply
+        # or echoes the user (it only ever saw single exchanges). It answers the current message alone.
+        return None, window[-FINETUNED_WINDOW:]
     return PERSONA + ("\n\n" + memes.hint(card) if card else ""), window
 
 

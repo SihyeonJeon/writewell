@@ -13,7 +13,7 @@ Colab (T4 is enough for 4-bit E4B):
 
 Env:  WORK (default /content/drive/MyDrive/writewell)   MODEL (default unsloth/gemma-4-E4B-it)   TAG
       CKPT   checkpoint or adapter dir; default = lowest eval loss under <run>/ckpt, else <run>/adapter
-      K (6)  samples per turn      STYLE (finetuned | instructed)      PIN  json {user message: reply} to fix turns
+      K (6)  samples per turn   SEED (3407)   STYLE (finetuned | instructed)   PIN  json {user message: reply} to fix turns
 Out:  <WORK>/demo/chat_answers.json      {user message: chosen reply}   -> CHAT_ANSWERS_FILE for the server
       <WORK>/demo/chat_candidates.json   every sample with its gate result, and the exact context it was drawn from
 """
@@ -30,7 +30,7 @@ E = os.environ.get
 MODEL = E("MODEL", "unsloth/gemma-4-E4B-it")
 WORK = Path(E("WORK", "/content/drive/MyDrive/writewell"))
 RUN = WORK / "runs" / (MODEL.split("/")[-1] + ("-" + E("TAG") if E("TAG") else ""))
-K, STYLE = int(E("K", "6")), E("STYLE", "finetuned")
+K, STYLE, SEED = int(E("K", "6")), E("STYLE", "finetuned"), int(E("SEED", "3407"))
 
 
 def best_checkpoint():
@@ -72,6 +72,8 @@ def main():
     tok = get_chat_template(tok, chat_template="gemma-4")
     FastModel.for_inference(model)
 
+    log = []
+
     def sample(system, window):
         msgs = ([{"role": "system", "content": system}] if system else []) + window
         try:
@@ -82,7 +84,7 @@ def main():
         ids = ids.to(model.device)
         outs = []
         for seed in range(K):
-            torch.manual_seed(3407 + seed)
+            torch.manual_seed(SEED + 1000 * len(log) + seed)
             with torch.no_grad():
                 g = model.generate(**ids, max_new_tokens=120, do_sample=True, temperature=1.0, top_p=0.95, top_k=64)
             outs.append(tidy(tok.decode(g[0][ids["input_ids"].shape[1]:], skip_special_tokens=True)))
@@ -90,7 +92,7 @@ def main():
 
     pin = json.loads(Path(E("PIN")).read_text()) if E("PIN") else {}
     script = json.loads((ROOT / "demo" / "script.json").read_text())
-    history, answers, log = [], {}, []
+    history, answers = [], {}
     for user in script:
         history.append({"role": "user", "content": user})
         if chat.WRITE_RE.search(user):                       # writing turns are handed off; the chat model is not asked
@@ -99,6 +101,8 @@ def main():
         system, window = context.chat(history, None, STYLE)
         msgs, outs = sample(system, window)
         cands = [{"text": t, "banned": [h["gram"] for h in check(t)["hits"] if h["kind"] == "ban"]} for t in dict.fromkeys(outs) if t]
+        said = {m["content"] for m in history}                    # never an echo of the user or a repeat of an earlier reply
+        cands = [c for c in cands if c["text"] not in said]
         ok = [c for c in cands if not c["banned"] and 2 <= len(c["text"]) <= 80]
         chosen = pin.get(user) or (ok[0]["text"] if ok else cands[0]["text"] if cands else "")
         answers[user] = chosen

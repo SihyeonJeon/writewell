@@ -80,6 +80,8 @@ def test_finetuned_chat_model_gets_no_instructions():
     h = [{"role": "user", "content": "今天又加班到九點，我好累 XD"}]
     system, window = context.chat(h, {"say": "x", "phrase": "y"}, "finetuned")
     assert system is None and window == h
+    longer = h + [{"role": "assistant", "content": "辛苦啦"}, {"role": "user", "content": "明天也要加班"}]
+    assert context.chat(longer, None, "finetuned")[1] == longer[-1:]       # the current message alone
     system, _ = context.chat(h, None, "instructed")
     assert system == context.PERSONA
 
