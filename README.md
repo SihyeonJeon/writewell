@@ -12,7 +12,7 @@ An agent that talks like a person and writes like one, in Traditional Chinese (T
 
 | corpus | size | role |
 |---|---|---|
-| pre-LLM Taiwanese text (Common Crawl captures dated 2018–2021) | 6,655 docs, 19 sources, 10 genres | what people write |
+| pre-LLM Taiwanese text (Common Crawl captures dated 2018 to 2021) | 6,655 docs, 19 sources, 10 genres | what people write |
 | machine-written articles | 1,097 docs across several subject areas | what a tuned writer over-uses |
 | raw model output on the same titles as human posts | 143 docs | what a model over-uses by default |
 
@@ -42,7 +42,7 @@ Copy `.env.example` to `.env` and fill in what you have:
 
 ## What is real in the demo
 
-- **Chat replies** are outputs of our fine-tuned Gemma (gemma-4-12B, QLoRA, checkpoint 2100, eval loss 3.22), drawn with
+- **Chat replies** are outputs of our fine-tuned Gemma (gemma-4-12B, QLoRA, a mid-training checkpoint), drawn with
   `train/infer_demo.py`: 18 samples per turn, each checked by the gate. `demo/chat_candidates.json` holds every sample and
   the one used. Point `CHAT_BASE_URL` at a server hosting the model and the same turns run live.
 - **The article** is written by a frontier model and passed through the gate; flagged sentences go back to the model for
@@ -53,22 +53,26 @@ Copy `.env.example` to `.env` and fill in what you have:
 
 ## Chat model weights
 
-The fine-tuned adapter (LoRA for `unsloth/gemma-4-12B-it`, checkpoint 2100, eval loss 3.22) is attached to the
+The fine-tuned adapter (LoRA for `google/gemma-4-12B-it`) is attached to the
 [`gemma-adapter-v0.1` release](https://github.com/SihyeonJeon/writewell/releases/tag/gemma-adapter-v0.1)
 as `writewell-gemma-4-12b-adapter.zip`. Load it on top of the base model (`train/infer_demo.py` shows how, `CKPT=<unzipped dir>`),
 serve it behind any OpenAI-compatible server, and set `CHAT_BASE_URL` / `CHAT_MODEL` in `.env`: the agent then talks to it live.
 The base model is under Google's Gemma terms of use.
 
+This is a checkpoint from partway through training (step 2100, eval loss 3.22, still falling). We ran out of time before the
+run finished, so the model is weaker than it will be: it answers one message at a time, and good replies come from sampling
+several and keeping the ones that pass the gate.
+
 ## Reaction memes
 
 `agent/skills/memes.py` answers with a meme when one fits and with none when nothing does. The library
 (`memes/library/taiwan-v1/catalog.json`) comes from the social-monitoring collector (`collect/ig_trends.py`),
-which records, per meme, the phrase, when it fits and when it does not.
+which records, per meme, the phrase, when it fits and when it doesn't.
 
 Choosing stays cheap as the library grows: `python -m agent.skills.memes build` turns each card into one small
 vector, and a turn costs one dot product per card. No image or card is read per turn. A card comes out only above
 a minimum similarity; messages about real trouble (job loss, illness, grief) never get one.
-`memes/pins.json` lists situations where a specific card must come out. Image files are not in the repo.
+`memes/pins.json` lists situations where a specific card must come out. Image files stay out of the repo.
 
 ## Layout
 
@@ -82,4 +86,4 @@ train/     chat-model fine-tuning
 web/       demo server and page
 ```
 
-Corpora are not included.
+The corpora stay out of the repo.
